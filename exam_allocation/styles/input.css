@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+*{
+  font-family: "Geist";
+  color:white;
+}
+
+.secondary{
+  color:#A1A1A1;
+}
+
+button{
+  color: black;
+}
+
+body{
+  background-color: black;
+}
+
+button{
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
