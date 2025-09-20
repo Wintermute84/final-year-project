@@ -31,3 +31,19 @@ button{
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+#file-label
+{
+  color: black;
+  padding: 8px;
+}
+
+#file
+{
+  position: absolute;
+  visibility: hidden;
+}
+
+.upload-button{
+  color: black;
+}
