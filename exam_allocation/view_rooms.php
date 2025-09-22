@@ -70,37 +70,7 @@
     <main  class="flex-1 flex">
       <section class="relative flex-1 flex items-center justify-center">
         <div class=" absolute bg-white w-[0.5px] h-[95%] right-0"></div>
-        <div class="w-[60%] h-[60%] grid grid-rows-5 grid-flow-col ">
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
-          <div class="w-[35px] h-[35px] bg-[#9E9B9B] border-3 rounded-md border-[#FFFEFE] ml-3"></div>  
+        <div class="w-[60%] h-[60%] grid grid-rows-6 grid-flow-col js-view-room-container">
         </div>
       </section>
       <section class="flex-1 flex items-start justify-center mt-5">
@@ -129,7 +99,7 @@
           <div class="flex flex-col w-full items-end mt-10 gap-2 overflow-auto h-[400px]">
             <?php if ($result->num_rows > 0): ?>
             <?php while ($row = $result->fetch_assoc()): ?>
-              <div class="w-[80%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out ">
+              <div data-capacity="<?= $row['Capacity'] ?>" data-room-id="<?= $row['Rid']?>" class="w-[80%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-div">
                 <div class="w-fit flex flex-col ml-2">
                   <p class="text-sm">No - <?= $row['Room_no'] ?></p>
                   <p class="text-sm">Capacity - <?= $row['Capacity'] ?></p>
