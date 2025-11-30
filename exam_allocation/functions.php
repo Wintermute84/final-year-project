@@ -1,6 +1,6 @@
 <?php
   function getRooms($conn, $block = null) {
-      if ($block) {
+      if ($block != 'All') {
           $stmt = $conn->prepare("SELECT * FROM rooms WHERE Block = ? ORDER BY Rid ASC");
           $stmt->bind_param("s", $block);
           $stmt->execute();

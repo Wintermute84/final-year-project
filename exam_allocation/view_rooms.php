@@ -1,7 +1,7 @@
 <?php
   include 'db_connect.php';
   include 'functions.php';
-  $block = isset($_GET['block']) ? $_GET['block'] : 'M George Block';
+  $block = isset($_GET['block']) ? $_GET['block'] : 'All';
   if (isset($_GET['delete_id'])) {
       deleteRoom($conn, $_GET['delete_id']);
       header("Location: view_rooms.php?block=" . urlencode($block));
@@ -90,6 +90,7 @@
                   x-transition:leave-start="opacity-100 scale-100"
                   x-transition:leave-end="opacity-0 scale-95"
                   class="bg-[#373737] absolute top-full mt-2 z-40 -left-10 border w-[238px] h-fit flex flex-col items-start p-3 rounded-md gap-1">
+                <p @click="window.location.href='view_rooms.php?block=All'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">All</p>
                 <p @click="window.location.href='view_rooms.php?block=M%20George%20Block'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">M George Block</p>
                 <p @click="window.location.href='view_rooms.php?block=Ramanujan%20Block'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">Ramanujan Block</p>                              
               </div>
@@ -111,9 +112,6 @@
                     class="h-[35px] w-[35px] bg-white flex items-center justify-center border rounded-md">
                     <img class="h-[20px]" src="./assets/delete.png" alt="delete icon">
                   </a>
-                  <button class="h-[35px] w-[35px] bg-white flex items-center justify-center  border rounded-md">
-                    <img class="h-[20px]" src="./assets/edit.png" alt="edit icon">
-                  </button>
                 </div>
               </div>    
             <?php endwhile; ?>
