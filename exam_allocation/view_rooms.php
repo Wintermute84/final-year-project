@@ -58,13 +58,14 @@
       </div>
       <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none">
         <img src="./assets/ham_menu.png" alt="hamburger menu" class="hidden">
-        <p class="secondary cursor-pointer">Overview</p>
-        <p class="secondary cursor-pointer">Seating Plan</p>
-        <p class="secondary cursor-pointer">Exams</p>
-        <p class="border-b-2 pb-1 cursor-pointer">Rooms</p>
-        <p class="secondary cursor-pointer">Students</p>
-        <p class="secondary cursor-pointer">Invigilation</p>
-        <p class="secondary cursor-pointer">Programmes</p>
+       <p class="secondary cursor-pointer" onclick="window.location.href='overview.php'">Overview</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='seating_plan.php'">Seating Plan</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='exams.php'">Exams</p>
+        <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='view_rooms.php'">Rooms</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='students.php'">Students</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='invigilation.php'">Invigilation</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='programmes.php'">Programmes</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
       </div>
     </header>
     <main  class="flex-1 flex">

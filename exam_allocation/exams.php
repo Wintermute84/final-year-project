@@ -1,3 +1,16 @@
+<?php 
+  include 'db_connect.php';
+  include 'functions.php';
+
+  if (isset($_POST['exam-upload'])) {
+      $a = addExamDefinition($conn);
+      header("Location: exams.php?e=$a");
+      exit;
+       
+  }
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
   
@@ -43,11 +56,49 @@
         <p class="secondary cursor-pointer" onclick="window.location.href='students.php'">Students</p>
         <p class="secondary cursor-pointer" onclick="window.location.href='invigilation.php'">Invigilation</p>
         <p class="secondary cursor-pointer" onclick="window.location.href='programmes.php'">Programmes</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
       </div>
     </header>
     <main  class="flex-1 flex">
     </main>  
-    <button class="absolute bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center bottom-8 right-3 cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
+    <div class="absolute inset-0 flex items-center justify-center bg-black z-40 opacity-96" x-show="on" >
+      <div class="w-[600px] h-[700px] bg-[#131313] z-50 border-[#D9D9D9] border-2  rounded-[3px] relative">
+            <img @click="on = false" src="./assets/close.png" alt="close icon" class="absolute top-3 right-0 mr-4 h-[20px] cursor-pointer">
+            <div class="relative flex w-full h-[50px] items-center justify-center select-none mt-6">
+              <p class="text-2xl">Enter Exam Details</p>
+            </div>
+            <form method="post" enctype="multipart/form-data" class="flex flex-col justify-center gap-4 mt-8">
+              <label for="examNameInput" class="flex flex-col ml-16">
+                Exam Name
+                <input type="text" id="examNameInput" name="examNameInput" class="border-2 px-3 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]">
+              </label>
+              <label for="examTypeInput" class="flex flex-col ml-16">
+                Exam Type
+                <select id="examTypeInput" class="px-3 border-2 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]" name="examTypeInput">
+                  <option value="1">Internal</option>
+                  <option value="2">University</option>
+                </select>
+              </label>
+              <label for="startDateInput" class="flex flex-col ml-16">
+                Start Date
+                <input type="date" id="startDateInput" name="startDateInput" class="px-3 border-2 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]">
+              </label>
+              <label for="endDateInput" class="flex flex-col ml-16">
+                End Date
+                <input type="date" name="endDateInput" id="endDateInput" class="px-3 border-2 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]">
+              </label>
+              <div class="flex flex-col ml-16 gap-2">
+                <p>Exam Time Table Upload</p>
+                <div class="flex gap-2 items-center justify-start">
+                  <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label" for="file">Choose File</label>
+                  <input type="file" id="file" name="file" accept=".csv" required>
+                </div>
+              </div>
+              <button type="submit" name="exam-upload" class="upload-button bg-white border rounded-[3px] w-[112px] h-[50px] mx-auto mt-12">Submit</button>              
+            </form>
+      </div>
+    </div> 
+    <button @click="on=true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer absolute bottom-8 right-3"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
     <script type="module" src="./scripts/app.js"></script>
   </body>
 </html>

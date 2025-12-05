@@ -47,3 +47,12 @@ button{
 .upload-button{
   color: black;
 }
+
+table{
+  border:1px solid white;
+}
+
+tr > td, tr > th{
+  border: 1px solid white;
+  padding: 4px;
+}

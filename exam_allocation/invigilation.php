@@ -43,6 +43,7 @@
         <p class="secondary cursor-pointer" onclick="window.location.href='students.php'">Students</p>
         <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='invigilation.php'">Invigilation</p>
         <p class="secondary cursor-pointer" onclick="window.location.href='programmes.php'">Programmes</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
       </div>
     </header>
     <main  class="flex-1 flex">

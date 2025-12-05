@@ -65,6 +65,7 @@ if (isset($_GET['deleteid'])) {
         <p class="border-b-2 pb-1  cursor-pointer" onclick="window.location.href='students.php'">Students</p>
         <p class="secondary cursor-pointer" onclick="window.location.href='invigilation.php'">Invigilation</p>
         <p class="secondary cursor-pointer" onclick="window.location.href='programmes.php'">Programmes</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
       </div>
     </header>
     <main  class="flex-1 flex">
@@ -171,7 +172,7 @@ if (isset($_GET['deleteid'])) {
             <?php endif; ?>
       </div>
     </div> 
-   <div class="absolute bottom-8 right-3 flex gap-2">
+    <div class="absolute bottom-8 right-3 flex gap-2">
       <button @click="on=true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center  cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
       <a href="students.php?deleteid=1" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer" onclick="return confirm('Delete entire student details?');"><img class="h-[25px]" src="assets/delete.png" alt="add icon"></a>
     </div> 

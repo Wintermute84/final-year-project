@@ -1,3 +1,9 @@
+<?php
+  include 'db_connect.php';
+  include 'functions.php';
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
   
@@ -43,11 +49,30 @@
         <p class="secondary cursor-pointer" onclick="window.location.href='students.php'">Students</p>
         <p class="secondary cursor-pointer" onclick="window.location.href='invigilation.php'">Invigilation</p>
         <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='programmes.php'">Programmes</p>
+        <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
       </div>
     </header>
     <main  class="flex-1 flex">
-    </main>  
-    <button class="absolute bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center bottom-8 right-3 cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
+    </main> 
+    <div class="absolute inset-0 flex items-center justify-center bg-black z-40 opacity-96"
+     x-show="on">
+      <div class="w-[500px] h-[250px] bg-black z-50 border-white border-2  rounded-[3px]">
+            <div class="relative flex w-full h-[50px] items-center justify-center select-none">
+              <p>Upload Programme  Details(.csv)</p>
+              <img @click="on = false" src="./assets/close.png" alt="close icon" class="absolute right-0 mr-4 h-[20px] cursor-pointer">
+            </div>
+            <form method="post" enctype="multipart/form-data" class="flex justify-center gap-3 mt-16">
+              <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label" for="file">Choose File</label>
+              <input type="file" id="file" name="file" accept=".csv" required>
+              <button type="submit" name="upload" class="upload-button bg-white border rounded-[3px] w-[112px] h-[41px]">Upload</button>
+            </form>
+      </div>
+    </div> 
+    <div class="absolute bottom-8 right-3 flex gap-2">
+      <button @click="on = true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center  cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
+      <button class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer" onclick="return confirm('Delete entire programme details?');"><img class="h-[25px]" src="assets/delete.png" alt="add icon"></button>
+    </div>
+    
     <script type="module" src="./scripts/app.js"></script>
   </body>
 </html>

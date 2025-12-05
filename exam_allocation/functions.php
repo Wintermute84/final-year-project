@@ -111,4 +111,15 @@
         $result = $stmt->get_result();
         return $result;
     }
+
+    function addExamDefinition($conn){
+        $examName = $_POST['examNameInput'];
+        $examType = $_POST['examTypeInput'];
+        $startDate = $_POST['startDateInput'];
+        $endDate = $_POST['endDateInput'];
+        $stmt = $conn->prepare("INSERT INTO exam_definition (ename, etype, sdate, edate) VALUES (?,?,?,?)");
+        $stmt->bind_param("siss", $examName, $examType, $startDate, $endDate);
+        $stmt->execute();
+        return true;
+    }
 ?>
