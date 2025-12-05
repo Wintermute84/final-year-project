@@ -20,20 +20,20 @@
         <h4 class="text-2xl">An all in one solution to fulfil all your seating requirements at without all the hassle</h4>
       </div>
       <div class="w-[480px] h-[550px] p-3 bg-[#0A0A0A] border-2 border-[#474444] rounded-3xl">
-        <form class="flex flex-col justify-evenly h-[100%]">
+        <form class="flex flex-col justify-evenly h-[100%]" action="signin.php" method="post">
           <div class="ml-6 mt-5">
             <h2 class="text-3xl">Sign In</h2>
             <h6 class="text-white secondary">Enter your credentials to sign in</h6>
           </div>
           <label class="ml-6 flex flex-col mb-5">
             Username
-            <input type="text" class="border-2 border-[#605F5F] px-3 rounded-[15px] h-[50px] w-[80%] bg-[#2E2E2E]" placeholder="john doe">
+            <input name="user-name" type="text" class="border-2 border-[#605F5F] px-3 rounded-[15px] h-[50px] w-[80%] bg-[#2E2E2E]" placeholder="john doe">
           </label>
           <label class="ml-6 flex flex-col mb-5">
             Password
-            <input type="password" class="border-2 border-[#605F5F] px-3 rounded-[15px] h-[50px] w-[80%] bg-[#2E2E2E]" >
+            <input type="password" name="password" class="border-2 border-[#605F5F] px-3 rounded-[15px] h-[50px] w-[80%] bg-[#2E2E2E]" >
           </label>
-          <button type="button" class="bg-[#E5E5E5] text-lg w-[200px] mx-auto p-3 rounded-[10px]">Sign In</button>
+          <button type="submit" class="bg-[#E5E5E5] text-lg w-[200px] mx-auto p-3 rounded-[10px]">Sign In</button>
         </form>
       </div>
     </section>

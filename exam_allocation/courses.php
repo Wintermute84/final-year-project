@@ -1,6 +1,9 @@
 <?php
   include 'db_connect.php';
   include 'functions.php';
+  if(!isset($_SESSION["uid"])){
+    header("Location: index.php");
+  }
   $semester = isset($_GET['semester']) ? $_GET['semester'] : 'All';
   $result = getCourses($conn, $semester);
   if (isset($_POST['course-upload'])) {
@@ -45,10 +48,10 @@
               x-transition:leave-start="opacity-100 scale-100"
               x-transition:leave-end="opacity-0 scale-95"
               class="absolute top-8 right-1 h-9 w-[120px] bg-[#373737] border p-3 flex items-center rounded-md shadow-lg">
-            <div class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none">
+            <a href="logout.php" class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none">
               <img src="./assets/logout.png" alt="logout img">
               <p class="text-sm">Log out</p>
-            </div>
+            </a>
           </div>
         </div>
       </div>
