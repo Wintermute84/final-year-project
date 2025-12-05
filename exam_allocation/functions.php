@@ -122,4 +122,17 @@
         $stmt->execute();
         return true;
     }
+
+    function getExams($conn,$etype){
+        if($etype == "University Exam"){
+            $result = $conn->query("SELECT * FROM exam_definition where etype = 2");
+        }
+        elseif($etype == "Internal Exam"){
+            $result = $conn->query("SELECT * FROM exam_definition where etype = 1");
+        }
+        else{
+            $result = $conn->query("SELECT * FROM exam_definition");
+        }
+        return $result;
+    }
 ?>

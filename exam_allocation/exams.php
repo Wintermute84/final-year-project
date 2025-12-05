@@ -1,14 +1,13 @@
 <?php 
   include 'db_connect.php';
   include 'functions.php';
-
+  $etype = isset($_GET['etype']) ? $_GET['etype'] : 'All';
+  $result = getExams($conn,$etype);
   if (isset($_POST['exam-upload'])) {
       $a = addExamDefinition($conn);
-      header("Location: exams.php?e=$a");
+      header("Location: exams.php");
       exit;
-       
   }
-
 ?>
 
 <!DOCTYPE html>
@@ -60,6 +59,60 @@
       </div>
     </header>
     <main  class="flex-1 flex">
+      <section class="relative flex-1 flex items-center justify-center">
+        <div class=" absolute bg-white w-[0.5px] h-[95%] right-0"></div>
+        <div class="w-[60%] h-[60%] grid grid-rows-6 grid-flow-col js-view-room-container">
+        </div>
+      </section>
+      <section class="flex-1 flex items-start justify-center mt-5">
+        <div  class="w-[80%] h-[80%]">
+          <div x-data="{ open: false }" class="flex items-center justify-between m-2">
+            <button @click="on = true" class="h-[50px] w-[200px] bg-[#E5E5E5] rounded-sm cursor-pointer">Upload CSV</button>
+            <div @click="open = !open"  
+                class="flex items-center justify-between relative border h-[35px] w-[200px] px-2 rounded-md bg-[#373737] cursor-pointer">
+              <p><?=$etype ? $etype : "All" ?></p>
+              <img class="h-[16px]" src="assets/dropdown.png" alt="dropdown icon">
+              <div x-show="open"
+                  @click.outside="open = false" 
+                  x-transition:enter="transition ease-out duration-200"
+                  x-transition:enter-start="opacity-0 scale-95"
+                  x-transition:enter-end="opacity-100 scale-100"
+                  x-transition:leave="transition ease-in duration-150"
+                  x-transition:leave-start="opacity-100 scale-100"
+                  x-transition:leave-end="opacity-0 scale-95"
+                  class="bg-[#373737] absolute top-full mt-2 z-40 -left-10 border w-[238px] h-fit flex flex-col items-start p-3 rounded-md gap-1">
+                <p @click="window.location.href='exams.php?etype=All'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">All</p>
+                <p @click="window.location.href='exams.php?etype=Internal%20Exam'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">Internal Exam</p>
+                <p @click="window.location.href='exams.php?etype=University%20Exam'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">University Exam</p>                              
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col w-full items-end mt-10 gap-2 overflow-auto h-[400px]">
+            <?php if ($result->num_rows > 0): ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
+              <div class="py-4 w-[80%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-div">
+                <div class="w-fit flex flex-col ml-2">
+                  <p class="text-md">Exam Name - <?= $row['ename'] ?></p>
+                  <p class="text-md">Exam Type - <?= $row['etype'] == "1" ? "Internal Exam" : "University Exam" ?></p>
+                  <p class="text-md">Start Date - <?= $row['sdate'] ?></p>
+                  <p class="text-md">End Date - <?= $row['edate'] ?></p>
+                </div>
+                <div class="flex gap-2 mr-4">
+                  <a href="exams.php?delete_id=<?= $row['eid'] ?>" 
+                    onclick="return confirm('Delete this Exam?');"
+                    class="h-[35px] w-[35px] bg-white flex items-center justify-center border rounded-md">
+                    <img class="h-[20px]" src="./assets/delete.png" alt="delete icon">
+                  </a>
+                </div>
+              </div>    
+            <?php endwhile; ?>
+            <?php else: ?>
+                <p>No Data found.</p>
+            <?php endif; ?>
+          </div>
+        </div>
+      </section>
     </main>  
     <div class="absolute inset-0 flex items-center justify-center bg-black z-40 opacity-96" x-show="on" >
       <div class="w-[600px] h-[700px] bg-[#131313] z-50 border-[#D9D9D9] border-2  rounded-[3px] relative">
