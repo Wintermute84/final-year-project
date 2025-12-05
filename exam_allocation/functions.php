@@ -135,4 +135,51 @@
         }
         return $result;
     }
+
+    function importCoursesFromCSV($conn,$fileTmpName){
+     if ($_FILES['file']['size'] > 0) {
+        $file = fopen($fileTmpName, "r");
+
+        fgetcsv($file);
+
+        while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+            $ccode    = $data[0];
+            $cname  = $data[1];
+            $is_elective = $data[2];
+            $sem = $data[3];
+            $branch = $data[4];
+    
+            $stmt = $conn->prepare(
+                "INSERT INTO courses (ccode, cname, sem, branch, is_elective) 
+                 VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssisi", $ccode, $cname, $sem, $branch, $is_elective);
+            $stmt->execute();
+        }
+
+        fclose($file);
+
+        return true;
+    }
+    return false;   
+    }
+
+    function getCourses($conn,$semester){
+        if ($semester != 'All') {
+          $stmt = $conn->prepare("SELECT distinct branch, sem FROM courses WHERE sem = ?");
+          $stmt->bind_param("i", $semester);
+          $stmt->execute();
+          $result = $stmt->get_result();
+      } else {
+          $result = $conn->query("SELECT distinct branch, sem FROM courses order by sem");
+      }
+      return $result;
+    }
+
+    function getCourseData($conn, $semester, $branch){
+        $stmt = $conn->prepare("SELECT * FROM courses WHERE sem = ? and branch = ?");
+        $stmt->bind_param("is", $semester, $branch);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result;
+    }
 ?>
