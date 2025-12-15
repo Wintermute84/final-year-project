@@ -112,7 +112,7 @@
         return $result;
     }
 
-    function addExamDefinition($conn){
+    function addExamDefinition($conn,$filename){
         $examName = $_POST['examNameInput'];
         $examType = $_POST['examTypeInput'];
         $startDate = $_POST['startDateInput'];
@@ -120,6 +120,30 @@
         $stmt = $conn->prepare("INSERT INTO exam_definition (ename, etype, sdate, edate) VALUES (?,?,?,?)");
         $stmt->bind_param("siss", $examName, $examType, $startDate, $endDate);
         $stmt->execute();
+        $last_id = $conn->insert_id;
+        if ($_FILES['time-table-upload-file']['size'] > 0) {
+            $file = fopen($filename, "r");
+
+            fgetcsv($file);
+
+            while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+                $edate = $data[0];
+                $sess = $data[1];
+                $ccode = $data[2];
+                $sem = $data[3];
+                $branch = $data[4];
+
+                $stmts = $conn->prepare(
+                    "INSERT INTO exam_time_table(eid,edate,session,ccode,sem,branch) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        "
+                );
+                $stmts->bind_param("isssis", $last_id, $edate, $sess, $ccode, $sem, $branch);
+                $stmts->execute();
+            }
+
+            fclose($file);
+        }
         return true;
     }
 
@@ -181,5 +205,25 @@
         $stmt->execute();
         $result = $stmt->get_result();
         return $result;
+    }
+
+    function getExamTimeTableData($conn, $eid){
+        $stmt = $conn->prepare("SELECT * FROM exam_time_table WHERE eid = ?");
+        $stmt->bind_param("i", $eid);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result;
+    }
+
+    function deleteExam($conn,$eid){
+        $stmt = $conn->prepare("Delete FROM exam_definition WHERE eid = ?");
+        $stmt->bind_param("i", $eid);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmts = $conn->prepare("Delete FROM exam_time_table WHERE eid = ?");
+        $stmts->bind_param("i", $eid);
+        $stmts->execute();
+        $results = $stmt->get_result();
+        return ($results && $result);
     }
 ?>

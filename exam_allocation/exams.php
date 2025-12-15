@@ -7,10 +7,20 @@
   $etype = isset($_GET['etype']) ? $_GET['etype'] : 'All';
   $result = getExams($conn,$etype);
   if (isset($_POST['exam-upload'])) {
-      $a = addExamDefinition($conn);
+    if (isset($_FILES['time-table-upload-file'])) {
+      $filename = $_FILES['time-table-upload-file']['tmp_name'];
+      $a = addExamDefinition($conn,$filename);
+    }
+    header("Location: exams.php");
+    exit;
+  }
+  
+  if (isset($_GET['delete_id'])) {
+      deleteExam($conn, $_GET['delete_id']);
       header("Location: exams.php");
       exit;
   }
+  
 ?>
 
 <!DOCTYPE html>
@@ -64,8 +74,39 @@
     <main  class="flex-1 flex">
       <section class="relative flex-1 flex items-center justify-center">
         <div class=" absolute bg-white w-[0.5px] h-[95%] right-0"></div>
-        <div class="w-[60%] h-[60%] grid grid-rows-6 grid-flow-col js-view-room-container">
+        <div class="w-[99%] h-[99%]">
+          <?php  if (isset($_GET['eid'])): ?>
+            <h3 class="m-2 text-md"><?= $_GET['ename']?></h3>
+          <?php endif; ?>
+          <div class="w-[840px] h-[600px] overflow-auto mt-[20px]">
+            <?php 
+              if(isset($_GET['eid']) && isset($_GET['ename'])){
+                $eid = $_GET['eid'];
+                $timeTableData = getExamTimeTableData($conn, $eid);
+              }?>
+            <?php  if (isset($timeTableData) and $timeTableData->num_rows > 0): ?>
+              <table border="1" class="m-auto w-[99%]">
+                <tr>
+                  <th>Exam Date</th>
+                  <th>Session</th>
+                  <th>Course Code</th>
+                  <th>Semester</th>
+                  <th>Branch</th>
+                </tr> 
+            <?php while ($row = $timeTableData->fetch_assoc()): ?>
+              <tr>
+                <td><?=$row["edate"]?></td>
+                <td><?=$row["session"]?></td>
+                <td><?=$row["ccode"]?></td>
+                <td><?=$row["sem"]?></td>
+                <td><?=$row["branch"]?></td>
+              </tr>
+            <?php endwhile; ?>
+              </table>
+            <?php endif; ?>
+          </div>
         </div>
+      </div>
       </section>
       <section class="flex-1 flex items-start justify-center mt-5">
         <div  class="w-[80%] h-[80%]">
@@ -95,15 +136,15 @@
             <?php if ($result->num_rows > 0): ?>
             <?php while ($row = $result->fetch_assoc()): ?>
               <div class="py-4 w-[80%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-div">
-                <div class="w-fit flex flex-col ml-2">
+                <a href="exams.php?eid=<?=$row['eid']?>&ename=<?= $row['ename']?>" class="w-fit flex flex-col ml-2">
                   <p class="text-md">Exam Name - <?= $row['ename'] ?></p>
                   <p class="text-md">Exam Type - <?= $row['etype'] == "1" ? "Internal Exam" : "University Exam" ?></p>
                   <p class="text-md">Start Date - <?= $row['sdate'] ?></p>
                   <p class="text-md">End Date - <?= $row['edate'] ?></p>
-                </div>
+                </a>
                 <div class="flex gap-2 mr-4">
                   <a href="exams.php?delete_id=<?= $row['eid'] ?>" 
-                    onclick="return confirm('Delete this Exam?');"
+                    onclick="return confirm('Delete this Exam and   related data?');"
                     class="h-[35px] w-[35px] bg-white flex items-center justify-center border rounded-md">
                     <img class="h-[20px]" src="./assets/delete.png" alt="delete icon">
                   </a>
@@ -147,7 +188,7 @@
                 <p>Exam Time Table Upload</p>
                 <div class="flex gap-2 items-center justify-start">
                   <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label" for="file">Choose File</label>
-                  <input type="file" id="file" name="file" accept=".csv" required>
+                  <input type="file" id="file" name="time-table-upload-file" accept=".csv" required>
                 </div>
               </div>
               <button type="submit" name="exam-upload" class="upload-button bg-white border rounded-[3px] w-[112px] h-[50px] mx-auto mt-12">Submit</button>              
