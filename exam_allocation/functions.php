@@ -11,6 +11,11 @@
       return $result;
   }
 
+  function getBlocks($conn){
+    $result = $conn->query("SELECT distinct Block FROM rooms");
+    return $result;
+  }
+
   function deleteRoom($conn,$id) {
     $stmt = $conn->prepare("DELETE FROM rooms WHERE Room_no = ?");
     $stmt->bind_param("s", $id);
@@ -226,4 +231,13 @@
         $results = $stmt->get_result();
         return ($results && $result);
     }
+
+    function getExamInfo($conn,$eid){
+        $stmt = $conn->prepare("SELECT DISTINCT edate,session FROM exam_time_table WHERE eid = ?");
+        $stmt->bind_param("i", $eid);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result;
+    }
+
 ?>

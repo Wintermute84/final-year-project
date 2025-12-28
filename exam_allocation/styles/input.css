@@ -56,3 +56,53 @@ tr > td, tr > th{
   border: 1px solid white;
   padding: 4px;
 }
+
+.dinkey{
+  background-color: #08B35B;
+  color: white;
+}
+
+.button-secondary{
+  color:white;
+  border: 1px solid #ABABAB;
+}
+
+
+.num{
+  height: 54px;
+  width: 54px;
+  border: 2px solid white;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+}
+
+.num:hover{
+  background-color: #08B35B;
+  opacity: 0.9;
+}
+
+.num.selected{
+  background-color: #08B35B;
+}
+
+.selected{
+  height: 54px;
+  width: 54px;
+  border: 2px solid white;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+  background-color: #08B35B;
+}
+
+.grouped{
+  background-color: #0baf5a;
+}

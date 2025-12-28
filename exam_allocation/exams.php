@@ -144,7 +144,7 @@
                 </a>
                 <div class="flex gap-2 mr-4">
                   <a href="exams.php?delete_id=<?= $row['eid'] ?>" 
-                    onclick="return confirm('Delete this Exam and   related data?');"
+                    onclick="return confirm('Delete this Exam and related data?');"
                     class="h-[35px] w-[35px] bg-white flex items-center justify-center border rounded-md">
                     <img class="h-[20px]" src="./assets/delete.png" alt="delete icon">
                   </a>
