@@ -1,0 +1,31 @@
+Block,Room_No,Capacity,Type
+M George Block,M101,60,Normal
+M George Block,M103,60,Normal
+M George Block,M104,60,Normal
+M George Block,M105,60,Normal
+M George Block,M201,60,Normal
+M George Block,M202,60,Normal
+M George Block,M204,60,Normal
+M George Block,M205,60,Normal
+M George Block,M206,75,Drawing
+M George Block,M208,75,Drawing
+M George Block,M222,60,Normal
+M George Block,M321,60,Normal
+Ramanujan Block,209,60,Normal
+Ramanujan Block,211,60,Normal
+Ramanujan Block,212,60,Normal
+Ramanujan Block,502,60,Normal
+Ramanujan Block,506,60,Normal
+Ramanujan Block,508,60,Normal
+Ramanujan Block,512,60,Normal
+Ramanujan Block,601,60,Normal
+Ramanujan Block,603,60,Normal
+Ramanujan Block,604,60,Normal
+Ramanujan Block,606,60,Normal
+Ramanujan Block,607,60,Normal
+Ramanujan Block,610,60,Normal
+Ramanujan Block,612,60,Normal
+Ramanujan Block,613,60,Normal
+Ramanujan Block,704,60,Normal
+Ramanujan Block,705,60,Normal
+Ramanujan Block,706,60,Normal
