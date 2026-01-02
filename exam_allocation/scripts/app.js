@@ -64,7 +64,7 @@ document.getElementById("proceedBtn")?.addEventListener("click", () => {
     return;
   }
 
-  fetch("setRooms.php", {
+  fetch("./routes/setRooms.php", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -90,7 +90,7 @@ document.querySelectorAll(".js-slot-div").forEach(div => {
   div.addEventListener("click", () => {
     const { eid, edate: date, session: session } = div.dataset;
     const key = `semGroups_${eid}_${date}_${session}`;
-    fetch("get_sems.php", {
+    fetch("./routes/get_sems.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ eid, date, session })
@@ -266,7 +266,7 @@ document.getElementById("proceedfBtn")?.addEventListener("click", () => {
       localStorage.setItem('groupings',JSON.stringify(payload))
     });
     sessionStorage.clear()
-    fetch("seating.php", {
+    fetch("./routes/seating.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sem_groupings: payload })
@@ -280,6 +280,7 @@ document.getElementById("proceedfBtn")?.addEventListener("click", () => {
 })
 
 let shuffleSems = []
+let pairs = []
 let oddBranch = null;
 let groupMatching = {}
 let availableData = []
@@ -308,8 +309,9 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
     slotkey = `S${eid}_${date}_${session}`
     let sg = JSON.parse(localStorage.getItem('groupings'))
     let semGroups = sg[key]
-    
-    fetch("get_sems.php", {
+    pairs = semGroups
+
+    fetch("./routes/get_sems.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ eid, date, session })
@@ -323,18 +325,18 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
         div.innerText = ``;
       })
       if(shuffleSems.length ===  1){
-        document.querySelector(".js-shuffle-one").innerText = `Semester S${shuffleSems[0]} Side A`;
-        document.querySelector(".js-shuffle-two").innerText = `Semester S${shuffleSems[0]} Side B`;
+        document.querySelector(".js-shuffle-one").innerText = `Semester S${semGroups[0][0]} Side A`;
+        document.querySelector(".js-shuffle-two").innerText = `Semester S${semGroups[0][0]} Side B`;
         
-        oddBranch = shuffleSems[0]
+        oddBranch = semGroups[0][0]
         groupMatching[`${oddBranch}_A`] = 1
         groupMatching[`${oddBranch}_B`] = 2
       }
       else if(shuffleSems.length ===  2){
-        document.querySelector(".js-shuffle-one").innerText = `Semester S${shuffleSems[0]}`;
-        document.querySelector(".js-shuffle-two").innerText = `Semester S${shuffleSems[1]}`;
-        groupMatching[shuffleSems[0]] = 1;
-        groupMatching[shuffleSems[1]] = 2;
+        document.querySelector(".js-shuffle-one").innerText = `Semester S${semGroups[0][0]}`;
+        document.querySelector(".js-shuffle-two").innerText = `Semester S${semGroups[0][1]}`;
+        groupMatching[semGroups[0][0]] = 1;
+        groupMatching[semGroups[0][1]] = 2;
       }
       else if(shuffleSems.length ===  3){
         document.querySelector(".js-shuffle-one").innerText = `Semester S${semGroups[1][0]}`;
@@ -349,16 +351,16 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
         groupMatching[`${oddBranch}_B`] = 4
       }
       else if(shuffleSems.length ===  4){
-        document.querySelector(".js-shuffle-one").innerText = `Semester S${shuffleSems[0]}`;
-        document.querySelector(".js-shuffle-two").innerText = `Semester S${shuffleSems[1]}`;
-        document.querySelector(".js-shuffle-three").innerText = `Semester S${shuffleSems[2]}`;
-        document.querySelector(".js-shuffle-four").innerText = `Semester S${shuffleSems[3]}`;
-        groupMatching[shuffleSems[0]] = 1;
-        groupMatching[shuffleSems[1]] = 2;
-        groupMatching[shuffleSems[2]] = 3;
-        groupMatching[shuffleSems[3]] = 4;
+        document.querySelector(".js-shuffle-one").innerText = `Semester S${semGroups[0][0]}`;
+        document.querySelector(".js-shuffle-two").innerText = `Semester S${semGroups[0][1]}`;
+        document.querySelector(".js-shuffle-three").innerText = `Semester S${semGroups[1][0]}`;
+        document.querySelector(".js-shuffle-four").innerText = `Semester S${semGroups[1][1]}`;
+        groupMatching[semGroups[0][0]] = 1;
+        groupMatching[semGroups[0][1]] = 2;
+        groupMatching[semGroups[1][0]] = 3;
+        groupMatching[semGroups[1][1]] = 4;
       }
-      return fetch("get_branches.php", {
+      return fetch("./routes/get_branches.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ eid, date, session })
@@ -371,24 +373,30 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
         availableData.push({branch:branch.branch,sem:branch.sem})
       })
       if(sessionStorage.getItem(slotkey)){
+        document.querySelector(`.${slotkey}`).classList.add('grouped')
         const {no_sems,grids} = JSON.parse(sessionStorage.getItem(slotkey))
+        console.log(grids)
         availableData = []
+        grid1 = grids.grid1
+        grid2 = grids.grid2
+        grid3 = grids.grid3
+        grid4 = grids.grid4
         let l = no_sems
-        if(l === 1){
+        if(l == 1){
           renderMatchingDiv(grids.grid1,".js-shuffle-one-div","A")
           renderMatchingDiv(grids.grid2,".js-shuffle-two-div","B")
         }
-        else if(l === 2){
+        else if(l == 2){
           renderMatchingDiv(grids.grid1,".js-shuffle-one-div",null)
           renderMatchingDiv(grids.grid2,".js-shuffle-two-div",null)
         }
-        else if(l === 3){
+        else if(l == 3){
           renderMatchingDiv(grids.grid1,".js-shuffle-one-div",null)
           renderMatchingDiv(grids.grid2,".js-shuffle-two-div",null)
           renderMatchingDiv(grids.grid3,".js-shuffle-three-div","A")
           renderMatchingDiv(grids.grid4,".js-shuffle-four-div","B")
         }
-        else if(l === 4){
+        else if(l == 4){
           renderMatchingDiv(grids.grid1,".js-shuffle-one-div",null)
           renderMatchingDiv(grids.grid2,".js-shuffle-two-div",null)
           renderMatchingDiv(grids.grid3,".js-shuffle-three-div",null)
@@ -404,17 +412,17 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
 
 function displayAvailableBranches(){
   let html = ``
-  document.querySelector(`.${slotkey}`).classList.remove('grouped')
   availableData.forEach(data => {
     html += getAvailableBranch(data.sem, data.branch)
   })
-  if(availableData.length === 0){
-    sessionStorage.setItem(slotkey, JSON.stringify({no_sems:shuffleSems.length,grids:{grid1:grid1,grid2:grid2,grid3:grid3,grid4:grid4}}));
+  if(availableData.length === 0 && !sessionStorage.getItem(slotkey)){
+    sessionStorage.setItem(slotkey, JSON.stringify({no_sems:shuffleSems.length,groups:pairs,grids:{grid1:grid1,grid2:grid2,grid3:grid3,grid4:grid4}}));
     document.querySelector(`.${slotkey}`).classList.add('grouped')
   }
   else{
-    if(sessionStorage.getItem(slotkey)){
+    if(sessionStorage.getItem(slotkey) && availableData.length > 0){
       sessionStorage.removeItem(slotkey)
+      document.querySelector(`.${slotkey}`).classList.remove('grouped')
     }
   }
   document.querySelector(".available-branches-div").innerHTML = html;
@@ -593,10 +601,19 @@ function getShuffleBranch(sem, branch, special){
 }
 
 document.getElementById("proceeddBtn")?.addEventListener("click", () => {
+  console.log()
   const allSlots = [...document.querySelectorAll(".js-shuffle-div")];
   const allGrouped = allSlots.every(d => d.classList.contains("grouped"));
   if (!allGrouped) return alert("Complete grouping for all slots first!");
   else{
     console.log("done")
+    const payload = {};
+    allSlots.forEach(d => {
+      const { eid, edate: date, session } = d.dataset;
+      const key = `S${eid}_${date}_${session}`;
+      const saved = sessionStorage.getItem(key);
+      if (saved) payload[key] = JSON.parse(saved);
+    });
+    console.log(payload)
     };
 })

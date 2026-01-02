@@ -1,6 +1,6 @@
-<?php 
-  include "db_connect.php";
-  if ($_SERVER["REQUEST_METHOD"] === "POST") {
+<?php
+include 'config/db_connect.php';
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = trim($_POST['user-name']);
     $password = trim($_POST['password']);
 
@@ -9,7 +9,7 @@
     }
 
     $stmt = $conn->prepare("SELECT uid FROM users WHERE username = ? and password = ?");
-    $stmt->bind_param("ss", $username,$password);
+    $stmt->bind_param("ss", $username, $password);
     $stmt->execute();
     $stmt->bind_result($uid);
 
@@ -25,4 +25,3 @@
     $stmt->close();
     $conn->close();
 }
-?>

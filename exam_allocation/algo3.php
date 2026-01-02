@@ -1,10 +1,57 @@
 <?php
-include 'config/db_connect.php';
+include "config/db_connect.php";
 function getStudentData($conn, $semester)
 {
   $stmt = $conn->prepare("SELECT *
 FROM students
-WHERE semester IN (7) and branch in ('CSE A','CSE B','CSE AI','AIDS','CY')
+WHERE semester IN (5)
+ORDER BY
+  CASE branch
+    WHEN 'CSE A'  THEN 1
+    WHEN 'CSE B'  THEN 2
+    WHEN 'CSE AI' THEN 3
+    WHEN 'AIDS'   THEN 4
+    WHEN 'CY'     THEN 5
+    WHEN 'EEE'     THEN 6
+    WHEN 'ECE'     THEN 7
+    WHEN 'ME'     THEN 8
+    WHEN 'CE'     THEN 9
+  END,
+  CAST(SUBSTRING(semester, 2) AS UNSIGNED),rollno;
+");
+  $stmt->execute();
+  $result = $stmt->get_result();
+  return $result;
+}
+function getStudentDatas($conn, $semester)
+{
+  $stmt = $conn->prepare("SELECT *
+FROM students
+WHERE semester IN (7)
+ORDER BY
+  CASE branch
+    WHEN 'CSE A'  THEN 1
+    WHEN 'CSE B'  THEN 2
+    WHEN 'CSE AI' THEN 3
+    WHEN 'AIDS'   THEN 4
+    WHEN 'CY'     THEN 5
+    WHEN 'EEE'     THEN 6
+    WHEN 'ECE'     THEN 7
+    WHEN 'ME'     THEN 8
+    WHEN 'CE'     THEN 9
+  END,
+  CAST(SUBSTRING(semester, 2) AS UNSIGNED),rollno;
+");
+  $stmt->execute();
+  $result = $stmt->get_result();
+  return $result;
+}
+
+function getStudentDatass($conn, $semester)
+{
+  $stmt = $conn->prepare("SELECT *
+FROM students
+WHERE semester IN (3) and branch IN ('CSE A','CSE B','CSE AI','AIDS','CY')
 ORDER BY
   CASE branch
     WHEN 'CSE A'  THEN 1
@@ -19,11 +66,12 @@ ORDER BY
   $result = $stmt->get_result();
   return $result;
 }
-function getStudentDatas($conn, $semester)
+
+function getStudentDatassss($conn, $semester)
 {
   $stmt = $conn->prepare("SELECT *
 FROM students
-WHERE semester IN (7) and branch in ('EEE','ECE','CE','ME')
+WHERE semester IN (3) and branch in ('EEE','ECE','CE','ME')
 ORDER BY
   CASE branch
     WHEN 'EEE'  THEN 1
@@ -95,28 +143,35 @@ function getDrawingCount($conn)
 
 $csStudents    = getStudentData($conn, 7);
 $nonCSStudents = getStudentDatas($conn, 7);
+$lonecsSem = getStudentDatass($conn, 3);
+$lonenoncsSem = getStudentDatassss($conn, 3);
 
 $cs = iterator_to_array($csStudents);
 $noncs = iterator_to_array($nonCSStudents);
+$lonecs = iterator_to_array($lonecsSem);
+$lonenoncs = iterator_to_array($lonenoncsSem);
 
 $x = count($cs);
 $y = count($noncs);
-
-echo $x . $y . "</br>";
+$lcs = count($lonecs);
 
 $g = getDrawingCount($conn);   // total drawing room capacity
 
 $drawingAllocations = [];
-for ($i = 0; $i < $g && $i < $x; $i++) {
+for ($i = 0; $i < $g && $i < $lcs; $i++) {
   $drawingAllocations[] = [
-    'reg_no' => $cs[$i]['reg_no'],
+    'reg_no' => $lonecs[$i]['reg_no'],
     'room'   => 'DRAWING',
     'seat'   => 'D' . ($i + 1)
   ];
 }
 
 // remove assigned CS students
-$cs = array_slice($cs, $g);
+//$cs = array_slice($cs, $g);
+$restlcs = array_slice($lonecs, $g);
+$cs = array_merge($cs, $lonenoncs);
+$noncs = array_merge($noncs, $restlcs);
+
 $x = count($cs);
 $y = count($noncs);
 if ($x >= $y) {
@@ -139,7 +194,7 @@ if ($z % 2 == 0) {
 $A_total = $y + $p;
 $B_total = $y + $q;
 
-echo $A_total . $B_total;
+//echo $A_total . $B_total;
 
 $rooms = [];
 $res = $conn->query("
@@ -154,9 +209,9 @@ while ($row = $res->fetch_assoc()) {
 
 
 $dominant_A = array_slice($dominant, 0, count($dominant) - $p);
-echo serialize($dominant_A);
+//echo serialize($dominant_A);
 $dominant_B = array_slice($dominant, count($dominant) - $p);
-echo serialize($dominant_B);
+//echo serialize($dominant_B);
 
 $sideA_students = $dominant_A;
 $sideB_students = array_merge($dominant_B, $weaker);

@@ -1,9 +1,8 @@
 <?php
-include 'db_connect.php';
-include 'functions.php';
-if (!isset($_SESSION["uid"])) {
-  header("Location: index.php");
-}
+
+include __DIR__ . '/../config/db_connect.php';
+include __DIR__ . '/../config/functions.php';
+
 $payload = json_decode(file_get_contents("php://input"), true) ?? null;
 $selectedGroups   = $payload['sem_groupings'] ?? [];
 $_SESSION['sem_groupings'] = $payload['sem_groupings'];

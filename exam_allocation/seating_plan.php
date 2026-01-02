@@ -1,6 +1,6 @@
 <?php
-include 'db_connect.php';
-include 'functions.php';
+include 'config/db_connect.php';
+include 'config/functions.php';
 if (!isset($_SESSION["uid"])) {
   header("Location: index.php");
 }
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
     <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none">
       <img src="./assets/ham_menu.png" alt="hamburger menu" class="hidden">
       <p class="secondary cursor-pointer" onclick="window.location.href='overview.php'">Overview</p>
-      <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='seating_plan.php'">Seating Plan</p>
+      <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='seating_plan.php?step=1'">Seating Plan</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='exams.php'">Exams</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='view_rooms.php'">Rooms</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='students.php'">Students</p>
@@ -219,7 +219,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
       </form>
     <?php endif; ?>
     <?php if ($step === 4): ?>
-      <form class="w-[95%] h-fit bg-[#0F0E0E]  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
+      <form class="w-[95%] h-fit bg-[#0F0E0E] relative  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
+        <a href="help.php" target="_blank" class="gap-1 h-10 w-20 bg-white absolute right-5 top-4 help-button flex items-center justify-center rounded-[8px] hover:opacity-80">
+          <p class="secondary-font">Help</p>
+          <img src="assets/help.png" class="h-4" alt="help-icon">
+        </a>
         <div class="m-2 p-2">
           <p class="text-2xl">Generate Seating Plan</p>
           <p class="text-sm text-emerald-900">Step 4 of 4</p>
@@ -229,7 +233,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
             <div class="w-[25px] h-[25px] bg-[#2C2F2C] rounded-full flex items-center justify-center text-sm">3</div>
             <div class="w-[25px] h-[25px] bg-[#55A648] rounded-full flex items-center justify-center text-sm">4</div>
           </div>
-          <p class="secondary mt-2">Select Shuffle Type</p>
+          <p class="secondary mt-2">Select Shuffle Type.</p>
+          <p class="secondary">Grouped Slots will be marked in green.</p>
           <div class="mt-4 flex">
             <div class="overflow-auto max-h-[300px] w-[30%] flex flex-col gap-2">
               <?php if ($examInfo->num_rows > 0): ?>
