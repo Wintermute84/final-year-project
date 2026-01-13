@@ -143,7 +143,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
                 <?php while ($row = $rooms->fetch_assoc()): ?>
                   <div
                     class="py-4 min-w-[45%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-select-div"
-                    data-eid="<?= $row['Rid'] ?>">
+                    data-eid="<?= $row['Rid'] ?>"
+                    data-capacity="<?= $row['Capacity'] ?>">
                     <div class="w-fit flex flex-col ml-2">
                       <p class="text-md select-none">Block - <?= $row['Block'] ?></p>
                       <p class="text-md select-none">Room No - <?= $row['Room_no'] ?></p>

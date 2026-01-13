@@ -4,6 +4,16 @@ include 'config/functions.php';
 if (!isset($_SESSION["uid"])) {
   header("Location: index.php");
 }
+
+$result = getSeatingAllocations($conn);
+if (isset($_GET['aid'])) {
+  $examData = getSeatingExamData($conn, $_GET['aid']);
+}
+
+if (isset($_GET['session']) && $_GET['edate']) {
+  $roomData = getSeatingRoomData($conn, $_GET['aid'], $_GET['edate'], $_GET['session']);
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -55,8 +65,72 @@ if (!isset($_SESSION["uid"])) {
     </div>
   </header>
   <main class="flex-1 flex">
+    <section class="relative flex-1 flex items-center justify-center js-seating-section">
+      <div class="w-[100%] h-[600px] overflow-auto flex flex-wrap">
+        <?php if ($result->num_rows > 0 && !isset($_GET['aid'])): ?>
+          <?php while ($row = $result->fetch_assoc()): ?>
+            <div class="w-[300px] bg-black h-[250px] m-4 rounded-[8px] border border-gray-500 flex flex-col relative">
+              <div class="h-[50px] border-b border-b-gray-500  flex items-center justify-between">
+                <p class="ml-2">
+                  <?= $row['ename'] ?>
+                </p>
+                <button class="bg-white h-[25px] w-[25px] mr-4 rounded-[4px] flex items-center justify-center">
+                  <img src="assets/delete.png" class="w-[20px]" alt="deleteIcon">
+                </button>
+              </div>
+              <div class="flex flex-1 flex-col justify-center">
+                <p class="m-2">Created at : <?= $row['created_at'] ?></p>
+                <p class="m-2">Exam Start Date : <?= $row['sdate'] ?></p>
+                <p class="m-2">Exam End Date : <?= $row['edate'] ?></p>
+              </div>
+              <a onclick="window.location.href='overview.php?aid=<?= $row['aid'] ?>'" data-sal-id="<?= $row['aid'] ?>" class="secondary-font cursor-pointer js-view-seating-plan w-fit h-[20px] bg-white m-auto mb-3 p-3 rounded-[4px] flex items-center justify-center">View</a>
+            </div>
+          <?php endwhile; ?>
+        <?php endif; ?>
+        <?php if (isset($_GET['aid'])): ?>
+          <section class="flex-1 flex-col">
+            <div class="flex flex-col w-[70%] mt-10 gap-2 overflow-auto h-[280px] items-start">
+              <?php if ($examData->num_rows > 0): ?>
+                <?php while ($row = $examData->fetch_assoc()): ?>
+                  <a
+                    onclick="window.location.href='overview.php?aid=<?= $_GET['aid'] ?>&edate=<?= $row['edate'] ?>&session=<?= $row['session'] ?>'"
+                    class="py-4 min-w-[95%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-start hover:opacity-80 transition-all ease-in-out js-seating-blocks"
+                    data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $_GET['aid'] ?>">
+                    <div class="w-fit flex flex-col ml-2">
+                      <p class="text-md select-none">Exam Date - <?= $row['edate'] ?></p>
+                      <p class="text-md select-none">Session - <?= $row['session'] ?></p>
+                    </div>
+                  </a>
+                <?php endwhile; ?>
+              <?php else: ?>
+                <p>No data found.</p>
+              <?php endif; ?>
+            </div>
+            <div class="flex flex-col w-[70%] mt-10 gap-2 overflow-auto h-[220px] items-start">
+              <?php if (isset($roomData) && ($roomData->num_rows > 0)): ?>
+                <?php while ($row = $roomData->fetch_assoc()): ?>
+                  <div data-edate=<?= $row['edate'] ?> data-session=<?= $row['session'] ?> data-aid="<?= $row['aid'] ?>" data-room-id="<?= $row['room'] ?>" class="w-[95%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-blocks">
+                    <div class="w-fit flex flex-col ml-2">
+                      <p class="text-sm">No - <?= $row['room'] ?></p>
+                      <p class="text-sm">Capacity - <?= $row['Capacity'] ?></p>
+                      <p class="text-sm">Room Type - <?= $row['Type'] ?></p>
+                    </div>
+                  </div>
+                <?php endwhile; ?>
+              <?php else: ?>
+                <p>No data found.</p>
+              <?php endif; ?>
+            </div>
+          </section>
+          <section class="flex-1">
+            <div class="w-full h-[600px] overflow-auto  js-seating-data-container">
+
+            </div>
+          </section>
+        <?php endif; ?>
+      </div>
+    </section>
   </main>
-  <button class="absolute bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center bottom-8 right-3 cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
   <script type="module" src="./scripts/app.js"></script>
 </body>
 

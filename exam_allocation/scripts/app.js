@@ -18,17 +18,22 @@ let rooms = []
 const exams = document.querySelectorAll(".js-exam-div")
 const hiddenInput = document.getElementById('selectedExamId');
 const roomsDiv = document.querySelectorAll(".js-room-select-div");
+let roomCapacity = 0
 
 roomsDiv.forEach(room => {
   room.addEventListener('click',()=>{
     room.classList.toggle("dinkey")
     if(rooms.includes(room.dataset.eid)){
       rooms = rooms.filter(function(val) {
+        if(val === room.dataset.eid){
+          roomCapacity -= parseInt(room.dataset.capacity)
+        }
         return val !== room.dataset.eid; 
       })
     }
     else{
       rooms.push(room.dataset.eid)
+      roomCapacity += parseInt(room.dataset.capacity)
     }
   })
 })
@@ -44,12 +49,15 @@ exams.forEach(exam => {
 document.getElementById("selectAllRooms")?.addEventListener("change", function () {
    if(this.checked){
     rooms = []
+    roomCapacity = 0
     roomsDiv.forEach(room => {
       room.classList.add("dinkey")
       rooms.push(room.dataset.eid)
+      roomCapacity += parseInt(room.dataset.capacity)
     })
    }
    else{
+    roomCapacity = 0
     roomsDiv.forEach(room => {
       room.classList.remove("dinkey")
       rooms = [];
@@ -70,11 +78,15 @@ document.getElementById("proceedBtn")?.addEventListener("click", () => {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      rooms: rooms
+      rooms: rooms,
+      roomCapacity: roomCapacity
     })
   })
   .then(res => res.json())
   .then(data => {
+    if(data.error){
+      alert(data.error + " Discrepancy on " + data.discrepancy)
+    }
     window.location.href="seating_plan.php";
   })
   .catch(err => {
@@ -85,7 +97,6 @@ document.getElementById("proceedBtn")?.addEventListener("click", () => {
 });
 
 
-// When a slot is clicked → load its sem grouping UI
 document.querySelectorAll(".js-slot-div").forEach(div => {
   div.addEventListener("click", () => {
     const { eid, edate: date, session: session } = div.dataset;
@@ -102,14 +113,11 @@ document.querySelectorAll(".js-slot-div").forEach(div => {
       const sems = d.sems || [];
       sem = sems
       availableSems = new Set(sems)
-      // Auto-group if 1 or 2 sems
-      if (sems.length <= 2) {
-        const auto = sems.map(s => [s]); // each sem its own group
+      if (sems.length < 2) {
         sessionStorage.setItem(key, JSON.stringify(auto));
         markGrouped(div);
         loadSemGroupingUI(sems, div, auto);
       } else {
-        // Load saved grouping if exists
         const saved = sessionStorage.getItem(key);
         const parsed = saved ? JSON.parse(saved) : null;
         const grouping = parsed || null;
@@ -128,7 +136,6 @@ function markGrouped(slotDiv) {
   slotDiv.classList.add("grouped");
 }
 
-// Reset UI when switching to a slot that is NOT yet grouped
 function resetSlotGroupingUI(sems, slotDiv) {
   selected.clear();
   groups = [];
@@ -136,20 +143,17 @@ function resetSlotGroupingUI(sems, slotDiv) {
 }
 
 
-// Global state for current grouping UI
 let selected = new Set();
 let groups = [];
 let currentSlot = null;
 let availableSems = new Set()
 let sem = []
 let sem_groupings = []
-// Render semester divs and load grouping if provided
 function loadSemGroupingUI(sems, slotDiv, grouping) {
   currentSlot = slotDiv;
   const container = document.getElementById("numberContainer");
   container.innerHTML = "";
   document.getElementById("groupPreview").innerHTML = "";
-  // If a saved grouping is passed, render that and exit
   if (grouping) {
     renderGroupPreview(grouping);
     if(currentSlot.classList.contains("grouped")){
@@ -157,7 +161,6 @@ function loadSemGroupingUI(sems, slotDiv, grouping) {
     }
   }
 
-  // Otherwise render chips for fresh selection
   sems.forEach(n => {
     const chip = document.createElement("div");
     chip.className = "num";
@@ -614,6 +617,48 @@ document.getElementById("proceeddBtn")?.addEventListener("click", () => {
       const saved = sessionStorage.getItem(key);
       if (saved) payload[key] = JSON.parse(saved);
     });
-    console.log(payload)
-    };
+    
+    fetch("./routes/allocation_engine.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seating_data: payload })
+    })
+    .then(r => r.json())
+    .then(d => {
+    if (d.success) window.location.href = "ding.php";
+    })
+    .catch(e => alert("Allocation send failed"));
+  };
+})
+
+document.querySelectorAll('.js-room-blocks').forEach(button => {
+  button.addEventListener('click',()=>{
+    const edate = button.dataset.edate;
+    const session = button.dataset.session;
+    const aid = button.dataset.aid;
+    const roomId = button.dataset.roomId;
+     fetch("./routes/getSeatedStudentData.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ edate:edate,session:session,aid:aid,roomId:roomId })
+    })
+    .then(r => r.json())
+    .then(d => {
+      let students = d.students;
+      let html = `<table border="1" class="m-auto w-[95%]">
+              <tr>
+                <th>Register No</th>
+                <th>Seat</th>
+              </tr>`
+      students.forEach(student => {
+        html += `<tr>
+                  <td>${student.reg_no}</td>
+                  <td>${student.seat}</td>
+                </tr>`
+      })
+      html += `</table>`
+      document.querySelector('.js-seating-data-container').innerHTML = html;
+    })
+    .catch(e => alert("Allocation send failed"));
+  })
 })

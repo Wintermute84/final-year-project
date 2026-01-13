@@ -16,6 +16,17 @@ if (isset($_POST['course-upload'])) {
     $message = "Error importing CSV file!";
   }
 }
+
+if (isset($_GET['deleteCourses'])) {
+  $param = $_GET['deleteCourses'];
+  $branch = null;
+  if (isset($_GET['branch'])) {
+    $branch = $_GET['branch'];
+  }
+  deleteCourses($conn, $param, $branch);
+  header("Location: courses.php");
+  exit;
+}
 ?>
 
 
@@ -81,7 +92,7 @@ if (isset($_POST['course-upload'])) {
             $courseData = getCourseData($conn, $_GET['semdetail'], $branch);
           } ?>
           <?php if (isset($courseData) and $courseData->num_rows > 0): ?>
-            <table border="1" class="m-auto w-[99%]">
+            <table border="1" class="m-auto w-[95%]">
               <tr>
                 <th>Code</th>
                 <th>Name</th>
@@ -137,6 +148,11 @@ if (isset($_POST['course-upload'])) {
                   <p class="text-md">Semester - <?= $row['sem'] ?></p>
                   <p class="text-md">Branch - <?= $row['branch'] ?></p>
                 </div>
+                <button
+                  onclick="if(confirm('Delete entire course details for this branch?')) location.href='courses.php?deleteCourses=<?= $row['sem'] ?>&branch=<?= $row['branch'] ?>'; event.preventDefault();"
+                  class="h-[35px] w-[35px] bg-white flex items-center justify-center border rounded-md mr-3">
+                  <img class="h-[20px]" src="./assets/delete.png" alt="delete icon">
+                </button>
               </a>
             <?php endwhile; ?>
           <?php else: ?>
@@ -163,7 +179,7 @@ if (isset($_POST['course-upload'])) {
   </div>
   <div class="absolute bottom-8 right-3 flex gap-2">
     <button @click="on = true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center  cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
-    <a href="courses.php?deleteCourses=1" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer" onclick="return confirm('Delete entire courses details?');"><img class="h-[25px]" src="assets/delete.png" alt="add icon"></a>
+    <a href="courses.php?deleteCourses=All" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer" onclick="return confirm('Delete entire courses details?');"><img class="h-[25px]" src="assets/delete.png" alt="add icon"></a>
   </div>
 
   <script type="module" src="./scripts/app.js"></script>

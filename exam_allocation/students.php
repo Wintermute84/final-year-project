@@ -16,7 +16,15 @@ if (isset($_POST['student-upload'])) {
   }
 }
 if (isset($_GET['deleteid'])) {
-  deleteStudentData($conn);
+  deleteStudentData($conn, null, 'All');
+  header("Location: students.php");
+  exit;
+}
+
+if (isset($_GET['semesterId']) && isset($_GET['branchId'])) {
+  $semesterId = $_GET['semesterId'];
+  $branchId = $_GET['branchId'];
+  deleteStudentData($conn, $branchId, $semesterId);
   header("Location: students.php");
   exit;
 }
@@ -148,6 +156,11 @@ if (isset($_GET['deleteid'])) {
                   <p class="text-md">Semester - <?= $row['semester'] ?></p>
                   <p class="text-md">Branch - <?= $row['branch'] ?></p>
                 </div>
+                <button
+                  onclick="if(confirm('Delete this branch?')) location.href='students.php?semesterId=<?= $row['semester'] ?>&branchId=<?= $row['branch'] ?>'; event.preventDefault();"
+                  class="h-[35px] w-[35px] bg-white flex items-center justify-center border rounded-md mr-3">
+                  <img class="h-[20px]" src="./assets/delete.png" alt="delete icon">
+                </button>
               </a>
             <?php endwhile; ?>
           <?php else: ?>
@@ -177,7 +190,7 @@ if (isset($_GET['deleteid'])) {
   </div>
   <div class="absolute bottom-8 right-3 flex gap-2">
     <button @click="on=true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center  cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
-    <a href="students.php?deleteid=1" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer" onclick="return confirm('Delete entire student details?');"><img class="h-[25px]" src="assets/delete.png" alt="add icon"></a>
+    <a href="students.php?deleteid=All" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer" onclick="return confirm('Delete entire student details?');"><img class="h-[25px]" src="assets/delete.png" alt="add icon"></a>
   </div>
   <script type="module" src="./scripts/app.js"></script>
 </body>

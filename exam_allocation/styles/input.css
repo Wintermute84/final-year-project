@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
-*{
+* {
   font-family: "Geist";
-  color:white;
+  color: white;
 }
 
-.secondary{
-  color:#A1A1A1;
+.secondary {
+  color: #a1a1a1;
 }
 
-button{
+button {
   color: black;
 }
 
-body{
+body {
   background-color: black;
 }
 
-button{
+button {
   cursor: pointer;
 }
 
@@ -32,43 +32,41 @@ button{
   background: transparent;
 }
 
-#file-label
-{
+#file-label {
   color: black;
   padding: 8px;
 }
 
-#file
-{
+#file {
   position: absolute;
   visibility: hidden;
 }
 
-.upload-button{
+.upload-button {
   color: black;
 }
 
-table{
-  border:1px solid white;
+table {
+  border: 1px solid white;
 }
 
-tr > td, tr > th{
+tr > td,
+tr > th {
   border: 1px solid white;
   padding: 4px;
 }
 
-.dinkey{
-  background-color: #08B35B;
+.dinkey {
+  background-color: #08b35b;
   color: white;
 }
 
-.button-secondary{
-  color:white;
-  border: 1px solid #ABABAB;
+.button-secondary {
+  color: white;
+  border: 1px solid #ababab;
 }
 
-
-.num{
+.num {
   height: 54px;
   width: 54px;
   border: 2px solid white;
@@ -81,16 +79,16 @@ tr > td, tr > th{
   transition: all 0.1s ease-in-out;
 }
 
-.num:hover{
-  background-color: #08B35B;
+.num:hover {
+  background-color: #08b35b;
   opacity: 0.9;
 }
 
-.num.selected{
-  background-color: #08B35B;
+.num.selected {
+  background-color: #08b35b;
 }
 
-.selected{
+.selected {
   height: 54px;
   width: 54px;
   border: 2px solid white;
@@ -100,9 +98,22 @@ tr > td, tr > th{
   align-items: center;
   user-select: none;
   cursor: pointer;
-  background-color: #08B35B;
+  background-color: #08b35b;
 }
 
-.grouped{
+.grouped {
   background-color: #0baf5a;
+}
+
+.help-button {
+  color: black;
+  transition: all ease-in-out 0.2s;
+}
+
+.secondary-font {
+  color: black;
+}
+
+.primary {
+  font-family: "Poppins";
 }
