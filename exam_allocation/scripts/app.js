@@ -114,6 +114,7 @@ document.querySelectorAll(".js-slot-div").forEach(div => {
       sem = sems
       availableSems = new Set(sems)
       if (sems.length < 2) {
+        const auto = sems.map(s => [s]);
         sessionStorage.setItem(key, JSON.stringify(auto));
         markGrouped(div);
         loadSemGroupingUI(sems, div, auto);
@@ -344,14 +345,11 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
       else if(shuffleSems.length ===  3){
         document.querySelector(".js-shuffle-one").innerText = `Semester S${semGroups[1][0]}`;
         document.querySelector(".js-shuffle-two").innerText = `Semester S${semGroups[1][1]}`;
-        document.querySelector(".js-shuffle-three").innerText = `Semester S${semGroups[0][0]} Side A`;
-        document.querySelector(".js-shuffle-four").innerText = `Semester S${semGroups[0][0]} Side B`;
+        document.querySelector(".js-shuffle-three").innerText = `Semester S${semGroups[0][0]}`;
         
-        oddBranch = semGroups[0][0]
         groupMatching[semGroups[1][0]] = 1;
         groupMatching[semGroups[1][1]] = 2;
-        groupMatching[`${oddBranch}_A`] = 3
-        groupMatching[`${oddBranch}_B`] = 4
+        groupMatching[semGroups[0][0]] = 3
       }
       else if(shuffleSems.length ===  4){
         document.querySelector(".js-shuffle-one").innerText = `Semester S${semGroups[0][0]}`;
@@ -396,8 +394,7 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
         else if(l == 3){
           renderMatchingDiv(grids.grid1,".js-shuffle-one-div",null)
           renderMatchingDiv(grids.grid2,".js-shuffle-two-div",null)
-          renderMatchingDiv(grids.grid3,".js-shuffle-three-div","A")
-          renderMatchingDiv(grids.grid4,".js-shuffle-four-div","B")
+          renderMatchingDiv(grids.grid3,".js-shuffle-three-div",null)
         }
         else if(l == 4){
           renderMatchingDiv(grids.grid1,".js-shuffle-one-div",null)
@@ -637,6 +634,8 @@ document.querySelectorAll('.js-room-blocks').forEach(button => {
     const session = button.dataset.session;
     const aid = button.dataset.aid;
     const roomId = button.dataset.roomId;
+    const examName = button.dataset.ename;
+    const roomType = button.dataset.roomType;
      fetch("./routes/getSeatedStudentData.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -645,20 +644,98 @@ document.querySelectorAll('.js-room-blocks').forEach(button => {
     .then(r => r.json())
     .then(d => {
       let students = d.students;
-      let html = `<table border="1" class="m-auto w-[95%]">
-              <tr>
-                <th>Register No</th>
-                <th>Seat</th>
-              </tr>`
+      if(roomType == 'Drawing'){
+      let html = `<div class="w-[90%] flex flex-col border">
+    <table class="font-['sans-serif']">
+      <tr>
+        <th>Muthoot Institute of Technology and Science (Autonomous)</th>
+      </tr>
+      <tr>
+        <th>${examName}</th>
+      </tr>
+      <tr>
+        <th>Date of Exam: ${edate} <span class="mx-8"></span>Session: ${session}</th>
+      </tr>
+      <tr>
+        <th>Hall Seating Arrangement</th>
+      </tr>
+      <tr>
+        <th>Hall No: ${roomId}</th>
+      </tr>
+    </table>
+    <div class="flex w-full justify-between gap-30">
+        <table class="w-[100%] h-fit">
+          <tr border="0">
+            <th>Branch</th>
+            <th>Roll No</th>
+            <th>Seat</th>
+          </tr>`
       students.forEach(student => {
         html += `<tr>
-                  <td>${student.reg_no}</td>
-                  <td>${student.seat}</td>
-                </tr>`
+            <td align="center">S${student.semester}  ${student.branch}</td>
+            <td align="center">${student.rollno}</td>
+            <td align="center">${student.seat}</td>
+          </tr>`
       })
-      html += `</table>`
+      html += `</table>
+    </div>
+  </div>`
       document.querySelector('.js-seating-data-container').innerHTML = html;
+    }
+    else{
+      let html = `<div class="w-[90%] flex flex-col border">
+    <table class="font-['sans-serif']">
+      <tr>
+        <th>Muthoot Institute of Technology and Science (Autonomous)</th>
+      </tr>
+      <tr>
+        <th>${examName}</th>
+      </tr>
+      <tr>
+        <th>Date of Exam: ${edate} <span class="mx-8"></span>Session: ${session}</th>
+      </tr>
+      <tr>
+        <th>Hall Seating Arrangement</th>
+      </tr>
+      <tr>
+        <th>Hall No: ${roomId}</th>
+      </tr>
+    </table>
+    <div class="flex w-full justify-between gap-10">
+        <table class="w-[50%] h-fit">
+          <tr border="0">
+            <th>Branch</th>
+            <th>Roll No</th>
+            <th>Seat</th>
+          </tr>`
+    let aSlot = students.filter(student => student['seat'][0] === 'A')
+    let bSlot = students.filter(student => student['seat'][0] === 'B')
+    aSlot.forEach(student => {
+      html += `<tr>
+            <td align="center">S${student.semester}  ${student.branch}</td>
+            <td align="center">${student.rollno}</td>
+            <td align="center">${student.seat}</td>
+          </tr>`
     })
+    html += `</table>
+    <table class="w-[50%] h-fit">
+          <tr border="0">
+            <th>Branch</th>
+            <th>Roll No</th>
+            <th>Seat</th>
+          </tr>
+        `;
+    bSlot.forEach(student => {
+      html += `<tr>
+            <td align="center">S${student.semester}  ${student.branch}</td>
+            <td align="center">${student.rollno}</td>
+            <td align="center">${student.seat}</td>
+          </tr>`
+    })
+    html += `</table></div></div>`
+    document.querySelector('.js-seating-data-container').innerHTML = html; 
+    }
+  })
     .catch(e => alert("Allocation send failed"));
   })
 })

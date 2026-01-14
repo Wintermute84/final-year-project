@@ -1,19 +1,19 @@
 <?php
 
-function checkIfElective($conn, $edate, $session, $semester)
+function checkIfElective($conn, $edate, $session, $semester, $eid)
 {
-  $stmt = $conn->prepare("SELECT * from exam_time_table as ett join courses as c on c.ccode=ett.ccode and c.sem=? and ett.session=? and ett.edate = ? and c.is_elective=1");
-  $stmt->bind_param("iss", $semester, $session, $edate);
+  $stmt = $conn->prepare("SELECT * from exam_time_table as ett join courses as c on c.ccode=ett.ccode and c.sem=? and ett.session=? and ett.edate = ? and ett.eid = ? and c.is_elective=1");
+  $stmt->bind_param("issi", $semester, $session, $edate, $eid);
   $stmt->execute();
   $result = $stmt->get_result();
   $rowCount = $result->num_rows;
   return $rowCount > 0;
 }
 
-function getElectiveSubjects($conn, $edate, $session, $semester)
+function getElectiveSubjects($conn, $edate, $session, $semester, $eid)
 {
-  $stmt = $conn->prepare("SELECT  distinct ett.ccode from exam_time_table as ett join courses as c on c.ccode=ett.ccode and c.sem=? and ett.session=? and ett.edate = ? and c.is_elective=1");
-  $stmt->bind_param("iss", $semester, $session, $edate);
+  $stmt = $conn->prepare("SELECT distinct ett.ccode from exam_time_table as ett join courses as c on c.ccode=ett.ccode and c.sem=? and ett.session=? and ett.edate = ? and ett.eid = ? and c.is_elective=1");
+  $stmt->bind_param("issi", $semester, $session, $edate, $eid);
   $stmt->execute();
   $result = $stmt->get_result();
   $rows = $result->fetch_all(MYSQLI_ASSOC);
@@ -21,23 +21,23 @@ function getElectiveSubjects($conn, $edate, $session, $semester)
 }
 
 
-function returnElectiveBranches($conn, $edate, $session, $semester)
+function returnElectiveBranches($conn, $edate, $session, $semester, $eid)
 {
-  $stmt = $conn->prepare("SELECT  distinct ett.branch from exam_time_table as ett join courses as c on c.ccode=ett.ccode and c.sem=? and ett.session=? and ett.edate = ? and c.is_elective=1");
-  $stmt->bind_param("iss", $semester, $session, $edate);
+  $stmt = $conn->prepare("SELECT  distinct ett.branch from exam_time_table as ett join courses as c on c.ccode=ett.ccode and c.sem=? and ett.session=? and ett.edate = ? and ett.eid = ? and c.is_elective=1");
+  $stmt->bind_param("issi", $semester, $session, $edate, $eid);
   $stmt->execute();
   $result = $stmt->get_result();
   $rows = $result->fetch_all(MYSQLI_ASSOC);
   return array_column($rows, 'branch');
 }
 
-function returnElectiveData($conn, $edate, $session, $semester, $orderfield)
+function returnElectiveData($conn, $edate, $session, $semester, $orderfield, $eid)
 {
-  $electiveBranches = returnElectiveBranches($conn, $edate, $session, $semester);
+  $electiveBranches = returnElectiveBranches($conn, $edate, $session, $semester, $eid);
   $nonElectiveBranches = array_diff($orderfield, $electiveBranches);
-  $electiveSubs = getElectiveSubjects($conn, $edate, $session, $semester);
+  $electiveSubs = getElectiveSubjects($conn, $edate, $session, $semester, $eid);
   $group = getElectiveStudentData($conn, $electiveSubs, $electiveBranches);
-  $nonElectiveStudents = getStudData($conn, $semester, $nonElectiveBranches);
+  $nonElectiveStudents = getStudData($conn, $semester, $nonElectiveBranches, $edate, $session, $eid);
   $group = array_merge($group, $nonElectiveStudents);
   return $group;
 }
@@ -55,13 +55,13 @@ function getElectiveStudentData($conn, $electiveSubs, $orderfield)
         WHEN s.elective_1 IN ($branches) THEN s.elective_1
         WHEN s.elective_2 IN ($branches) THEN s.elective_2
         WHEN s.elective_3 IN ($branches) THEN s.elective_3
-    END AS elective
+    END AS COURSE
 FROM students s
 WHERE (s.elective_1 IN ($branches)
    OR s.elective_2 IN ($branches)
    OR s.elective_3 IN ($branches))
 AND s.branch in ($orderfield)
-ORDER BY elective, s.branch, s.rollno;");
+ORDER BY COURSE, s.branch, s.rollno;");
   $stmt->execute();
   $result = $stmt->get_result();
   return iterator_to_array($result);
@@ -75,7 +75,7 @@ function getDrawingRoomData($conn, $rooms)
   return $result;
 }
 
-function getStudData($conn, $semester, $orderfield)
+function getStudData($conn, $semester, $orderfield, $edate, $session, $eid)
 {
   if (empty($orderfield)) {
     $sql = "SELECT * FROM students WHERE 1 = 0";
@@ -84,15 +84,22 @@ function getStudData($conn, $semester, $orderfield)
     return iterator_to_array($stmt->get_result());
   }
   $orderfield = implode(",", array_map(fn($b) => "'" . $conn->real_escape_string($b) . "'", $orderfield));
-  $stmt = $conn->prepare("SELECT *
-  FROM students
-  WHERE semester IN (?)
-    AND branch IN ($orderfield)
-  ORDER BY
-    FIELD(branch, $orderfield),
-    rollno;
+  $stmt = $conn->prepare("SELECT s.rollno, s.reg_no, c.ccode as COURSE 
+  FROM students s 
+  JOIN exam_time_table ett ON s.branch = ett.branch 
+  AND s.semester = ett.sem 
+  JOIN courses c ON ett.ccode = c.ccode 
+  AND ett.branch=c.branch 
+  AND ett.sem=c.sem 
+  WHERE s.semester = ? 
+  AND s.branch IN ($orderfield) 
+  AND c.is_elective = 0 
+  AND ett.edate = ? 
+  AND ett.session = ?
+  AND ett.eid = ? 
+  ORDER BY FIELD(s.branch, $orderfield), s.rollno;
   ");
-  $stmt->bind_param("i", $semester);
+  $stmt->bind_param("issi", $semester, $edate, $session, $eid);
   $stmt->execute();
   $result = $stmt->get_result();
   return iterator_to_array($result);
@@ -107,14 +114,14 @@ function getNormalRoomData($conn, $rooms)
 }
 
 
-function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $session)
+function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $session, $eid)
 {
-  if (checkIfElective($conn, $edate, $session, $semester)) {
-    $grp1 = returnElectiveData($conn, $edate, $session, $semester, $orderfield1);
-    $grp2 = returnElectiveData($conn, $edate, $session, $semester, $orderfield2);
+  if (checkIfElective($conn, $edate, $session, $semester, $eid)) {
+    $grp1 = returnElectiveData($conn, $edate, $session, $semester, $orderfield1, $eid);
+    $grp2 = returnElectiveData($conn, $edate, $session, $semester, $orderfield2, $eid);
   } else {
-    $grp1 = getStudData($conn, $semester, $orderfield1);
-    $grp2 = getStudData($conn, $semester, $orderfield2);
+    $grp1 = getStudData($conn, $semester, $orderfield1, $edate, $session, $eid);
+    $grp2 = getStudData($conn, $semester, $orderfield2, $edate, $session, $eid);
   }
 
   $x = count($grp1);
@@ -137,11 +144,12 @@ function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $
     for ($i = 0; $i < $n && $dIndex < $x; $i++) {
       $drawingAllocations[] = [
         'reg_no' => $grp1[$dIndex]['reg_no'],
+        'rollno' => $grp1[$dIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'A' . ($i + 1),
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $grp1[$dIndex]['elective'] ?? null
+        'elective' => $grp1[$dIndex]['COURSE'] ?? null
       ];
       $dIndex++;
     }
@@ -196,11 +204,12 @@ function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $
     for ($i = 1; $i <= $A_slots && $aIndex < count($sideA_students); $i++) {
       $finalAllocation[] = [
         'reg_no' => $sideA_students[$aIndex]['reg_no'],
+        'rollno' => $sideA_students[$aIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'A' . $i,
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $sideA_students[$aIndex]['elective'] ?? null
+        'elective' => $sideA_students[$aIndex]['COURSE'] ?? null
       ];
       $aIndex++;
     }
@@ -208,11 +217,12 @@ function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $
     for ($i = 1; $i <= $B_slots && $bIndex < count($sideB_students); $i++) {
       $finalAllocation[] = [
         'reg_no' => $sideB_students[$bIndex]['reg_no'],
+        'rollno' => $sideB_students[$bIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'B' . $i,
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $sideB_students[$bIndex]['elective'] ?? null
+        'elective' => $sideB_students[$bIndex]['COURSE'] ?? null
       ];
       $bIndex++;
     }
@@ -222,18 +232,18 @@ function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $
   return $result;
 }
 
-function algoTwo($conn, $semester1, $semester2, $orderfield1, $orderfield2, $rooms, $edate, $session)
+function algoTwo($conn, $semester1, $semester2, $orderfield1, $orderfield2, $rooms, $edate, $session, $eid)
 {
 
-  if (checkIfElective($conn, $edate, $session, $semester1)) {
-    $grp1 = returnElectiveData($conn, $edate, $session, $semester1, $orderfield1);
+  if (checkIfElective($conn, $edate, $session, $semester1, $eid)) {
+    $grp1 = returnElectiveData($conn, $edate, $session, $semester1, $orderfield1, $eid);
   } else {
-    $grp1 = getStudData($conn, $semester1, $orderfield1);
+    $grp1 = getStudData($conn, $semester1, $orderfield1, $edate, $session, $eid);
   }
-  if (checkIfElective($conn, $edate, $session, $semester2)) {
-    $grp2 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2);
+  if (checkIfElective($conn, $edate, $session, $semester2, $eid)) {
+    $grp2 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2, $eid);
   } else {
-    $grp2 = getStudData($conn, $semester2, $orderfield2);
+    $grp2 = getStudData($conn, $semester2, $orderfield2, $edate, $session, $eid);
   }
 
   $x = count($grp1);
@@ -256,11 +266,12 @@ function algoTwo($conn, $semester1, $semester2, $orderfield1, $orderfield2, $roo
     for ($i = 0; $i < $n && $dIndex < $x; $i++) {
       $drawingAllocations[] = [
         'reg_no' => $grp1[$dIndex]['reg_no'],
+        'rollno' => $grp1[$dIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'A' . ($i + 1),
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $grp1[$dIndex]['elective'] ?? null
+        'elective' => $grp1[$dIndex]['COURSE'] ?? null
       ];
       $dIndex++;
     }
@@ -315,11 +326,12 @@ function algoTwo($conn, $semester1, $semester2, $orderfield1, $orderfield2, $roo
     for ($i = 1; $i <= $A_slots && $aIndex < count($sideA_students); $i++) {
       $finalAllocation[] = [
         'reg_no' => $sideA_students[$aIndex]['reg_no'],
+        'rollno' => $sideA_students[$aIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'A' . $i,
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $sideA_students[$aIndex]['elective'] ?? null
+        'elective' => $sideA_students[$aIndex]['COURSE'] ?? null
       ];
       $aIndex++;
     }
@@ -327,11 +339,12 @@ function algoTwo($conn, $semester1, $semester2, $orderfield1, $orderfield2, $roo
     for ($i = 1; $i <= $B_slots && $bIndex < count($sideB_students); $i++) {
       $finalAllocation[] = [
         'reg_no' => $sideB_students[$bIndex]['reg_no'],
+        'rollno' => $sideB_students[$bIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'B' . $i,
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $sideB_students[$bIndex]['elective'] ?? null
+        'elective' => $sideB_students[$bIndex]['COURSE'] ?? null
       ];
       $bIndex++;
     }
@@ -341,25 +354,23 @@ function algoTwo($conn, $semester1, $semester2, $orderfield1, $orderfield2, $roo
   return $result;
 }
 
-function algoThree($conn, $semester1, $semester2, $semester3, $orderfield1, $orderfield2, $orderfield3, $orderfield4, $rooms, $edate, $session)
+function algoThree($conn, $semester1, $semester2, $semester3, $orderfield1, $orderfield2, $orderfield3, $rooms, $edate, $session, $eid)
 {
 
-  if (checkIfElective($conn, $edate, $session, $semester1)) {
-    $grp1 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2);
+  if (checkIfElective($conn, $edate, $session, $semester1, $eid)) {
+    $grp1 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2, $eid);
   } else {
-    $grp1 = getStudData($conn, $semester1, $orderfield1);
+    $grp1 = getStudData($conn, $semester1, $orderfield1, $edate, $session, $eid);
   }
-  if (checkIfElective($conn, $edate, $session, $semester2)) {
-    $grp2 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2);
+  if (checkIfElective($conn, $edate, $session, $semester2, $eid)) {
+    $grp2 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2, $eid);
   } else {
-    $grp2 = getStudData($conn, $semester2, $orderfield2);
+    $grp2 = getStudData($conn, $semester2, $orderfield2, $edate, $session, $eid);
   }
-  if (checkIfElective($conn, $edate, $session, $semester3)) {
-    $grp3 = returnElectiveData($conn, $edate, $session, $semester3, $orderfield3);
-    $grp4 = returnElectiveData($conn, $edate, $session, $semester3, $orderfield4);
+  if (checkIfElective($conn, $edate, $session, $semester3, $eid)) {
+    $grp3 = returnElectiveData($conn, $edate, $session, $semester3, $orderfield3, $eid);
   } else {
-    $grp3 = getStudData($conn, $semester3, $orderfield3);
-    $grp4 = getStudData($conn, $semester3, $orderfield4);
+    $grp3 = getStudData($conn, $semester3, $orderfield3, $edate, $session, $eid);
   }
 
   $x = count($grp1);
@@ -383,19 +394,19 @@ function algoThree($conn, $semester1, $semester2, $semester3, $orderfield1, $ord
     for ($i = 0; $i < $n && $dIndex < $l; $i++) {
       $drawingAllocations[] = [
         'reg_no' => $grp3[$dIndex]['reg_no'],
+        'rollno' => $grp3[$dIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'A' . ($i + 1),
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $grp3[$dIndex]['elective'] ?? null
+        'elective' => $grp3[$dIndex]['COURSE'] ?? null
       ];
       $dIndex++;
     }
   }
 
   $grp3 = array_slice($grp3, $dIndex);
-  $grp1 = array_merge($grp1, $grp4);
-  $grp2 = array_merge($grp2, $grp3);
+  $grp1 = array_merge($grp1, $grp3);
   $x = count($grp1);
   $y = count($grp2);
   if ($x >= $y) {
@@ -444,11 +455,12 @@ function algoThree($conn, $semester1, $semester2, $semester3, $orderfield1, $ord
     for ($i = 1; $i <= $A_slots && $aIndex < count($sideA_students); $i++) {
       $finalAllocation[] = [
         'reg_no' => $sideA_students[$aIndex]['reg_no'],
+        'rollno' => $sideA_students[$aIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'A' . $i,
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $sideA_students[$aIndex]['elective'] ?? null
+        'elective' => $sideA_students[$aIndex]['COURSE'] ?? null
       ];
       $aIndex++;
     }
@@ -456,11 +468,12 @@ function algoThree($conn, $semester1, $semester2, $semester3, $orderfield1, $ord
     for ($i = 1; $i <= $B_slots && $bIndex < count($sideB_students); $i++) {
       $finalAllocation[] = [
         'reg_no' => $sideB_students[$bIndex]['reg_no'],
+        'rollno' => $sideB_students[$bIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'B' . $i,
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $sideB_students[$bIndex]['elective'] ?? null
+        'elective' => $sideB_students[$bIndex]['COURSE'] ?? null
       ];
       $bIndex++;
     }
@@ -472,27 +485,27 @@ function algoThree($conn, $semester1, $semester2, $semester3, $orderfield1, $ord
 
 
 
-function algoFour($conn, $semester1, $semester2, $semester3, $semester4, $orderfield1, $orderfield2, $orderfield3, $orderfield4, $rooms, $edate, $session)
+function algoFour($conn, $semester1, $semester2, $semester3, $semester4, $orderfield1, $orderfield2, $orderfield3, $orderfield4, $rooms, $edate, $session, $eid)
 {
-  if (checkIfElective($conn, $edate, $session, $semester1)) {
-    $grp1 = returnElectiveData($conn, $edate, $session, $semester1, $orderfield1);
+  if (checkIfElective($conn, $edate, $session, $semester1, $eid)) {
+    $grp1 = returnElectiveData($conn, $edate, $session, $semester1, $orderfield1, $edate, $session, $eid);
   } else {
-    $grp1 = getStudData($conn, $semester1, $orderfield1);
+    $grp1 = getStudData($conn, $semester1, $orderfield1, $edate, $session, $eid);
   }
-  if (checkIfElective($conn, $edate, $session, $semester2)) {
-    $grp2 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2);;
+  if (checkIfElective($conn, $edate, $session, $semester2, $eid)) {
+    $grp2 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2, $eid);;
   } else {
-    $grp2 = getStudData($conn, $semester2, $orderfield2);
+    $grp2 = getStudData($conn, $semester2, $orderfield2, $edate, $session, $eid);
   }
-  if (checkIfElective($conn, $edate, $session, $semester3)) {
-    $grp3 = returnElectiveData($conn, $edate, $session, $semester3, $orderfield3);
+  if (checkIfElective($conn, $edate, $session, $semester3, $eid)) {
+    $grp3 = returnElectiveData($conn, $edate, $session, $semester3, $orderfield3, $eid);
   } else {
-    $grp3 = getStudData($conn, $semester3, $orderfield3);
+    $grp3 = getStudData($conn, $semester3, $orderfield3, $edate, $session, $eid);
   }
-  if (checkIfElective($conn, $edate, $session, $semester4)) {
-    $grp4 = returnElectiveData($conn, $edate, $session, $semester4, $orderfield4);
+  if (checkIfElective($conn, $edate, $session, $semester4, $eid)) {
+    $grp4 = returnElectiveData($conn, $edate, $session, $semester4, $orderfield4, $eid);
   } else {
-    $grp4 = getStudData($conn, $semester4, $orderfield4);
+    $grp4 = getStudData($conn, $semester4, $orderfield4, $edate, $session, $eid);
   }
 
   $x = count($grp1);
@@ -516,11 +529,12 @@ function algoFour($conn, $semester1, $semester2, $semester3, $semester4, $orderf
     for ($i = 0; $i < $n && $dIndex < $x; $i++) {
       $drawingAllocations[] = [
         'reg_no' => $grp1[$dIndex]['reg_no'],
+        'rollno' => $grp1[$dIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'A' . ($i + 1),
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $grp1[$dIndex]['elective'] ?? null
+        'elective' => $grp1[$dIndex]['COURSE'] ?? null
       ];
       $dIndex++;
     }
@@ -575,11 +589,12 @@ function algoFour($conn, $semester1, $semester2, $semester3, $semester4, $orderf
     for ($i = 1; $i <= $A_slots && $aIndex < count($sideA_students); $i++) {
       $finalAllocation[] = [
         'reg_no' => $sideA_students[$aIndex]['reg_no'],
+        'rollno' => $sideA_students[$aIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'A' . $i,
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $sideA_students[$aIndex]['elective'] ?? null
+        'elective' => $sideA_students[$aIndex]['COURSE'] ?? null
       ];
       $aIndex++;
     }
@@ -587,11 +602,12 @@ function algoFour($conn, $semester1, $semester2, $semester3, $semester4, $orderf
     for ($i = 1; $i <= $B_slots && $bIndex < count($sideB_students); $i++) {
       $finalAllocation[] = [
         'reg_no' => $sideB_students[$bIndex]['reg_no'],
+        'rollno' => $sideB_students[$bIndex]['rollno'],
         'room'   => $roomName,
         'seat'   => 'B' . $i,
         'edate'  => $edate,
         'session' => $session,
-        'elective' => $sideB_students[$bIndex]['elective'] ?? null
+        'elective' => $sideB_students[$bIndex]['COURSE'] ?? null
       ];
       $bIndex++;
     }

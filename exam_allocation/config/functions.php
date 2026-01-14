@@ -306,3 +306,17 @@ function getSeatingRoomData($conn, $aid, $edate, $session)
     $result = $stmt->get_result();
     return $result;
 }
+
+
+function deleteSeatingData($conn, $id)
+{
+    $stmt = $conn->prepare("Delete FROM seating_allocation_definition WHERE aid = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmts = $conn->prepare("Delete FROM seating_allocation_data WHERE aid = ?");
+    $stmts->bind_param("i", $id);
+    $stmts->execute();
+    $results = $stmt->get_result();
+    return ($results && $result);
+}

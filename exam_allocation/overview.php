@@ -6,12 +6,25 @@ if (!isset($_SESSION["uid"])) {
 }
 
 $result = getSeatingAllocations($conn);
+$ename = $_SESSION['ename'] ?? null;
+
+if (isset($_GET['ename'])) {
+  $_SESSION['ename'] = $_GET['ename'];
+}
+
 if (isset($_GET['aid'])) {
   $examData = getSeatingExamData($conn, $_GET['aid']);
 }
 
 if (isset($_GET['session']) && $_GET['edate']) {
   $roomData = getSeatingRoomData($conn, $_GET['aid'], $_GET['edate'], $_GET['session']);
+}
+
+if (isset($_GET['deleteId'])) {
+  $deleteId = $_GET['deleteId'];
+  deleteSeatingData($conn, $deleteId);
+  header("Location: overview.php");
+  exit;
 }
 
 ?>
@@ -74,52 +87,58 @@ if (isset($_GET['session']) && $_GET['edate']) {
                 <p class="ml-2">
                   <?= $row['ename'] ?>
                 </p>
-                <button class="bg-white h-[25px] w-[25px] mr-4 rounded-[4px] flex items-center justify-center">
+                <a onclick="return confirm('Delete this seating related data?');" href="overview.php?deleteId=<?= $row['aid'] ?>" class="bg-white h-[25px] w-[25px] mr-4 rounded-[4px] flex items-center justify-center">
                   <img src="assets/delete.png" class="w-[20px]" alt="deleteIcon">
-                </button>
+                </a>
               </div>
               <div class="flex flex-1 flex-col justify-center">
                 <p class="m-2">Created at : <?= $row['created_at'] ?></p>
                 <p class="m-2">Exam Start Date : <?= $row['sdate'] ?></p>
                 <p class="m-2">Exam End Date : <?= $row['edate'] ?></p>
               </div>
-              <a onclick="window.location.href='overview.php?aid=<?= $row['aid'] ?>'" data-sal-id="<?= $row['aid'] ?>" class="secondary-font cursor-pointer js-view-seating-plan w-fit h-[20px] bg-white m-auto mb-3 p-3 rounded-[4px] flex items-center justify-center">View</a>
+              <a onclick="window.location.href='overview.php?aid=<?= $row['aid'] ?>&ename=<?= $row['ename'] ?>'" data-sal-id="<?= $row['aid'] ?>" class="secondary-font cursor-pointer js-view-seating-plan w-fit h-[20px] bg-white m-auto mb-3 p-3 rounded-[4px] flex items-center justify-center">View</a>
             </div>
           <?php endwhile; ?>
         <?php endif; ?>
         <?php if (isset($_GET['aid'])): ?>
           <section class="flex-1 flex-col">
-            <div class="flex flex-col w-[70%] mt-10 gap-2 overflow-auto h-[280px] items-start">
-              <?php if ($examData->num_rows > 0): ?>
-                <?php while ($row = $examData->fetch_assoc()): ?>
-                  <a
-                    onclick="window.location.href='overview.php?aid=<?= $_GET['aid'] ?>&edate=<?= $row['edate'] ?>&session=<?= $row['session'] ?>'"
-                    class="py-4 min-w-[95%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-start hover:opacity-80 transition-all ease-in-out js-seating-blocks"
-                    data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $_GET['aid'] ?>">
-                    <div class="w-fit flex flex-col ml-2">
-                      <p class="text-md select-none">Exam Date - <?= $row['edate'] ?></p>
-                      <p class="text-md select-none">Session - <?= $row['session'] ?></p>
-                    </div>
-                  </a>
-                <?php endwhile; ?>
-              <?php else: ?>
-                <p>No data found.</p>
-              <?php endif; ?>
+            <div class="w-[70%] mt-6 p-2 relative border rounded-[10px] ml-2">
+              <p class="secondary absolute -top-6 left-2 z-50">Exam Dates</p>
+              <div class="flex flex-col w-[95%] m-auto  gap-2 overflow-auto h-[280px] items-start  py-4 relative">
+                <?php if ($examData->num_rows > 0): ?>
+                  <?php while ($row = $examData->fetch_assoc()): ?>
+                    <a
+                      onclick="window.location.href='overview.php?aid=<?= $_GET['aid'] ?>&edate=<?= $row['edate'] ?>&session=<?= $row['session'] ?>'"
+                      class="py-4 min-w-[95%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-start hover:opacity-80 transition-all ease-in-out js-seating-blocks"
+                      data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $_GET['aid'] ?>">
+                      <div class="w-fit flex flex-col ml-2">
+                        <p class="text-md select-none">Exam Date - <?= $row['edate'] ?></p>
+                        <p class="text-md select-none">Session - <?= $row['session'] ?></p>
+                      </div>
+                    </a>
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <p>No data found.</p>
+                <?php endif; ?>
+              </div>
             </div>
-            <div class="flex flex-col w-[70%] mt-10 gap-2 overflow-auto h-[220px] items-start">
-              <?php if (isset($roomData) && ($roomData->num_rows > 0)): ?>
-                <?php while ($row = $roomData->fetch_assoc()): ?>
-                  <div data-edate=<?= $row['edate'] ?> data-session=<?= $row['session'] ?> data-aid="<?= $row['aid'] ?>" data-room-id="<?= $row['room'] ?>" class="w-[95%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-blocks">
-                    <div class="w-fit flex flex-col ml-2">
-                      <p class="text-sm">No - <?= $row['room'] ?></p>
-                      <p class="text-sm">Capacity - <?= $row['Capacity'] ?></p>
-                      <p class="text-sm">Room Type - <?= $row['Type'] ?></p>
+            <div class="w-[70%] mt-8 p-2 relative border rounded-[10px] ml-2">
+              <p class="secondary absolute -top-6 left-2 z-50">Rooms</p>
+              <div class="flex flex-col w-full gap-2 overflow-y-auto h-[220px] items-start">
+                <?php if (isset($roomData) && ($roomData->num_rows > 0)): ?>
+                  <?php while ($row = $roomData->fetch_assoc()): ?>
+                    <div data-ename="<?= htmlspecialchars($ename, ENT_QUOTES) ?>" data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $row['aid'] ?>" data-room-id="<?= $row['room'] ?>" data-room-type="<?= $row['Type'] ?>" class="w-[95%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-blocks">
+                      <div class="w-fit flex flex-col ml-2">
+                        <p class="text-sm">No - <?= $row['room'] ?></p>
+                        <p class="text-sm">Capacity - <?= $row['Capacity'] ?></p>
+                        <p class="text-sm">Room Type - <?= $row['Type'] ?></p>
+                      </div>
                     </div>
-                  </div>
-                <?php endwhile; ?>
-              <?php else: ?>
-                <p>No data found.</p>
-              <?php endif; ?>
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <p>No data found.</p>
+                <?php endif; ?>
+              </div>
             </div>
           </section>
           <section class="flex-1">

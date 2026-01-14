@@ -17,7 +17,7 @@ if (!$aid || !$date || !$session || !$room) {
   exit;
 }
 
-$sql = "SELECT * FROM `seating_allocation_data` WHERE aid=? and edate = ? and session=? and room = ? order by seatingId ";
+$sql = "SELECT sad.reg_no,sad.seat,s.rollno,s.branch,s.semester FROM `seating_allocation_data` sad JOIN students s on sad.reg_no = s.reg_no  WHERE sad.aid=? and sad.edate = ? and sad.session=? and sad.room = ? order by sad.seatingId ";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("isss", $aid, $date, $session, $room);
 $stmt->execute();
@@ -27,7 +27,10 @@ $students = [];
 while ($row = $row = $res->fetch_assoc()) {
   $students[] =  [
     "reg_no" => $row['reg_no'],
-    "seat"    => $row['seat']
+    "branch" => $row['branch'],
+    "rollno" => $row['rollno'],
+    "seat"    => $row['seat'],
+    "semester" => $row['semester']
   ];
 }
 

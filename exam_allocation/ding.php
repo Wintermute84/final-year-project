@@ -32,7 +32,7 @@ if (isset($_SESSION['seating_data'])) {
         $branches[] = $item['branch'];
       }
       $shuffleOrder2 = $branches;
-      $results = algoOne($conn, $sem, $shuffleOrder1, $shuffleOrder2, $rooms, $edate, $session);
+      $results = algoOne($conn, $sem, $shuffleOrder1, $shuffleOrder2, $rooms, $edate, $session, $eid);
       $seatingResult = array_merge($seatingResult, $results);
     }
     if ($edata['no_sems'] === 2) {
@@ -51,7 +51,7 @@ if (isset($_SESSION['seating_data'])) {
         $branches[] = $item['branch'];
       }
       $shuffleOrder2 = $branches;
-      $results = algoTwo($conn, $sem1, $sem2, $shuffleOrder1, $shuffleOrder2, $rooms, $edate, $session);
+      $results = algoTwo($conn, $sem1, $sem2, $shuffleOrder1, $shuffleOrder2, $rooms, $edate, $session, $eid);
       $seatingResult = array_merge($seatingResult, $results);
     }
 
@@ -62,7 +62,6 @@ if (isset($_SESSION['seating_data'])) {
       $grid1 = $edata['grids']['grid1'];
       $grid2 = $edata['grids']['grid2'];
       $grid3 = $edata['grids']['grid3'];
-      $grid4 = $edata['grids']['grid4'];
       $branches = [];
       foreach ($grid1 as $item) {
         $branches[] = $item['branch'];
@@ -81,12 +80,8 @@ if (isset($_SESSION['seating_data'])) {
       }
       $shuffleOrder3 = $branches;
 
-      $branches = [];
-      foreach ($grid4 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder4 = $branches;
-      $results = algoThree($conn, $sem1, $sem2, $sem3, $shuffleOrder1, $shuffleOrder2, $shuffleOrder3, $shuffleOrder4, $rooms, $edate, $session);
+
+      $results = algoThree($conn, $sem1, $sem2, $sem3, $shuffleOrder1, $shuffleOrder2, $shuffleOrder3, $rooms, $edate, $session, $eid);
       $seatingResult = array_merge($seatingResult, $results);
     }
 
@@ -122,7 +117,7 @@ if (isset($_SESSION['seating_data'])) {
         $branches[] = $item['branch'];
       }
       $shuffleOrder4 = $branches;
-      $results = algoFour($conn, $sem1, $sem2, $sem3, $sem4, $shuffleOrder1, $shuffleOrder2, $shuffleOrder3, $shuffleOrder4, $rooms, $edate, $session);
+      $results = algoFour($conn, $sem1, $sem2, $sem3, $sem4, $shuffleOrder1, $shuffleOrder2, $shuffleOrder3, $shuffleOrder4, $rooms, $edate, $session, $eid);
       $seatingResult = array_merge($seatingResult, $results);
     }
   }
@@ -153,7 +148,7 @@ if (isset($_SESSION['seating_data'])) {
         $seatData['room'],
         $seatData['edate'],
         $seatData['session'],
-        $seatData['electiveCourseId'],
+        $seatData['elective'],
         $seatData['seat']
       );
       $stmt->execute();
