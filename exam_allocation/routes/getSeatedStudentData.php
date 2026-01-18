@@ -24,7 +24,7 @@ $stmt->execute();
 
 $res = $stmt->get_result();
 $students = [];
-while ($row = $row = $res->fetch_assoc()) {
+while ($row = $res->fetch_assoc()) {
   $students[] =  [
     "reg_no" => $row['reg_no'],
     "branch" => $row['branch'],

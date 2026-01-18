@@ -117,12 +117,14 @@ function getNormalRoomData($conn, $rooms)
 function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $session, $eid)
 {
   if (checkIfElective($conn, $edate, $session, $semester, $eid)) {
-    $grp1 = returnElectiveData($conn, $edate, $session, $semester, $orderfield1, $eid);
-    $grp2 = returnElectiveData($conn, $edate, $session, $semester, $orderfield2, $eid);
+    $orderfield = array_merge($orderfield1, $orderfield2);
+    $grp1 = returnElectiveData($conn, $edate, $session, $semester, $orderfield, $eid);
+    $grp2 = [];
   } else {
     $grp1 = getStudData($conn, $semester, $orderfield1, $edate, $session, $eid);
     $grp2 = getStudData($conn, $semester, $orderfield2, $edate, $session, $eid);
   }
+
 
   $x = count($grp1);
   $y = count($grp2);
@@ -154,7 +156,6 @@ function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $
       $dIndex++;
     }
   }
-
   $grp1 = array_slice($grp1, $dIndex);
   $x = count($grp1);
   $y = count($grp2);
@@ -358,7 +359,7 @@ function algoThree($conn, $semester1, $semester2, $semester3, $orderfield1, $ord
 {
 
   if (checkIfElective($conn, $edate, $session, $semester1, $eid)) {
-    $grp1 = returnElectiveData($conn, $edate, $session, $semester2, $orderfield2, $eid);
+    $grp1 = returnElectiveData($conn, $edate, $session, $semester1, $orderfield2, $eid);
   } else {
     $grp1 = getStudData($conn, $semester1, $orderfield1, $edate, $session, $eid);
   }

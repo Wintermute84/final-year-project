@@ -7,17 +7,15 @@ if (!isset($_SESSION["uid"])) {
 
 $result = getSeatingAllocations($conn);
 $ename = $_SESSION['ename'] ?? null;
+$aid = $_SESSION['aid'] ?? null;
 
 if (isset($_GET['ename'])) {
   $_SESSION['ename'] = $_GET['ename'];
 }
 
 if (isset($_GET['aid'])) {
+  $_SESSION['aid'] = $_GET['aid'];
   $examData = getSeatingExamData($conn, $_GET['aid']);
-}
-
-if (isset($_GET['session']) && $_GET['edate']) {
-  $roomData = getSeatingRoomData($conn, $_GET['aid'], $_GET['edate'], $_GET['session']);
 }
 
 if (isset($_GET['deleteId'])) {
@@ -103,35 +101,16 @@ if (isset($_GET['deleteId'])) {
         <?php if (isset($_GET['aid'])): ?>
           <section class="flex-1 flex-col">
             <div class="w-[70%] mt-6 p-2 relative border rounded-[10px] ml-2">
-              <p class="secondary absolute -top-6 left-2 z-50">Exam Dates</p>
+              <p class="secondary absolute -top-6 left-2">Exam Dates</p>
               <div class="flex flex-col w-[95%] m-auto  gap-2 overflow-auto h-[280px] items-start  py-4 relative">
                 <?php if ($examData->num_rows > 0): ?>
                   <?php while ($row = $examData->fetch_assoc()): ?>
-                    <a
-                      onclick="window.location.href='overview.php?aid=<?= $_GET['aid'] ?>&edate=<?= $row['edate'] ?>&session=<?= $row['session'] ?>'"
+                    <div
                       class="py-4 min-w-[95%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-start hover:opacity-80 transition-all ease-in-out js-seating-blocks"
-                      data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $_GET['aid'] ?>">
+                      data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $aid ?>" data-ename="<?= htmlspecialchars($row['ename'], ENT_QUOTES) ?>">
                       <div class="w-fit flex flex-col ml-2">
                         <p class="text-md select-none">Exam Date - <?= $row['edate'] ?></p>
                         <p class="text-md select-none">Session - <?= $row['session'] ?></p>
-                      </div>
-                    </a>
-                  <?php endwhile; ?>
-                <?php else: ?>
-                  <p>No data found.</p>
-                <?php endif; ?>
-              </div>
-            </div>
-            <div class="w-[70%] mt-8 p-2 relative border rounded-[10px] ml-2">
-              <p class="secondary absolute -top-6 left-2 z-50">Rooms</p>
-              <div class="flex flex-col w-full gap-2 overflow-y-auto h-[220px] items-start">
-                <?php if (isset($roomData) && ($roomData->num_rows > 0)): ?>
-                  <?php while ($row = $roomData->fetch_assoc()): ?>
-                    <div data-ename="<?= htmlspecialchars($ename, ENT_QUOTES) ?>" data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $row['aid'] ?>" data-room-id="<?= $row['room'] ?>" data-room-type="<?= $row['Type'] ?>" class="w-[95%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-blocks">
-                      <div class="w-fit flex flex-col ml-2">
-                        <p class="text-sm">No - <?= $row['room'] ?></p>
-                        <p class="text-sm">Capacity - <?= $row['Capacity'] ?></p>
-                        <p class="text-sm">Room Type - <?= $row['Type'] ?></p>
                       </div>
                     </div>
                   <?php endwhile; ?>
@@ -140,16 +119,40 @@ if (isset($_GET['deleteId'])) {
                 <?php endif; ?>
               </div>
             </div>
+            <div class="w-[70%] mt-8 p-2 relative border rounded-[10px] ml-2">
+              <p class="secondary absolute -top-6 left-2 ">Rooms</p>
+              <div class="flex flex-col w-full gap-2 overflow-y-auto h-[220px] items-start js-seated-rooms-div">
+
+              </div>
+            </div>
           </section>
-          <section class="flex-1">
-            <div class="w-full h-[600px] overflow-auto  js-seating-data-container">
+          <section class="flex-1 flex-col">
+            <div class="w-[300px] h-[60px] bg-[#545454] mx-auto mb-2 rounded-[8px] border border-white flex items-center justify-center gap-2">
+              <button @click="on=true" class="w-[45px] h-[45px] bg-white rounded-full border-2 border-black flex items-center justify-center"><img src="./assets/home.png" alt="home-icon"></button>
+              <button class="w-[45px] h-[45px] bg-white rounded-full border-2 border-black flex items-center justify-center js-download-room-report"><img src="./assets/download_2.png" alt="download-icon"></button>
+            </div>
+            <div class="w-full h-[500px] overflow-auto  js-seating-data-container">
 
             </div>
           </section>
         <?php endif; ?>
       </div>
     </section>
+    <div class="absolute inset-0 flex flex-col items-center justify-start bg-black z-40 opacity-100"
+      x-show="on">
+      <div class="w-full h-[20px] my-5 flex items-center justify-end">
+        <button class="cursor-pointer" id="download-hall-reports"><img src="./assets/download.png" alt="download icon" class="mr-4 h-[20px]"></button>
+        <img @click="on = false" src="./assets/close.png" alt="close icon" class="mr-4 h-[20px] cursor-pointer">
+      </div>
+
+      <div class="flex-1 w-full bg-black z-100 flex flex-col items-center justify-start  rounded-[3px]">
+        <div class=" w-[80%] h-full bg-white z-100 flex flex-col items-center justify-start  rounded-[3px] relative overflow-auto js-hall-reports-div">
+
+        </div>
+      </div>
+    </div>
   </main>
+  <script src="./scripts/html2pdf.bundle.min.js"></script>
   <script type="module" src="./scripts/app.js"></script>
 </body>
 

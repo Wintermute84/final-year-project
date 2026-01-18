@@ -291,7 +291,7 @@ function getSeatingAllocations($conn)
 
 function getSeatingExamData($conn, $aid)
 {
-    $stmt = $conn->prepare("SELECT distinct edate, session FROM seating_allocation_data where aid = ?");
+    $stmt = $conn->prepare("SELECT distinct sad.edate, sad.session, e.ename FROM seating_allocation_data sad JOIN seating_allocation_definition saad ON sad.aid=saad.aid JOIN exam_definition e ON saad.eid=e.eid where sad.aid = ?");
     $stmt->bind_param("i", $aid);
     $stmt->execute();
     $result = $stmt->get_result();

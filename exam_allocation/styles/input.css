@@ -117,3 +117,25 @@ tr > th {
 .primary {
   font-family: "Poppins";
 }
+
+.report > tbody > tr > td,
+.report > tbody > tr > th,
+.report > tbody > tr,
+.report {
+  background-color: white;
+  border: 1px solid black;
+  color: black;
+}
+
+.pdf-page {
+  page-break-after: always;
+  break-after: page;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+@media print {
+  table {
+    width: 100% !important;
+  }
+}
