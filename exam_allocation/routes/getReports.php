@@ -13,7 +13,7 @@ $session = $input['session'];
 $aid = $input['aid'];
 
 $sql = "
-SELECT s.reg_no,s.rollno,sad.room,s.branch,s.semester FROM `seating_allocation_data` sad 
+SELECT s.reg_no,s.rollno,sad.room,s.branch,s.semester,sad.electiveCourseId as course FROM `seating_allocation_data` sad 
     join students s on sad.reg_no=s.reg_no 
     where sad.edate= ? and session= ? and sad.aid=? ORDER BY s.semester,s.branch,CAST(s.rollno AS UNSIGNED);
 ";
@@ -31,6 +31,7 @@ while ($row = $result->fetch_assoc()) {
     $branch = $row['branch'];
     $room   = $row['room'];
     $roll   = $row['rollno'];
+    $course = $row['course'];
 
     if (!isset($data[$sem])) {
         $data[$sem] = [];
@@ -44,7 +45,7 @@ while ($row = $result->fetch_assoc()) {
         $data[$sem][$branch][$room] = [];
     }
 
-    $data[$sem][$branch][$room][] = $roll;
+    $data[$sem][$branch][$room][] = [$roll, $course];
 }
 
 echo json_encode(["success" => true, "reportData" => $data]);

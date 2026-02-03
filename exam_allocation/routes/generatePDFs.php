@@ -47,7 +47,7 @@ $aid = $input['aid'];
 $ename = $input['ename'];
 
 $sql = "
-SELECT s.rollno, sad.room, s.branch, s.semester
+SELECT s.rollno, sad.room, s.branch, s.semester, sad.electiveCourseId as course
 FROM seating_allocation_data sad
 JOIN students s ON sad.reg_no = s.reg_no
 WHERE sad.edate=? AND sad.session=? AND sad.aid=?
@@ -67,6 +67,7 @@ while ($row = $result->fetch_assoc()) {
   $branch = $row['branch'];
   $room   = $row['room'];
   $roll   = $row['rollno'];
+  $course = $row['course'];
 
   if (!isset($data[$sem])) {
     $data[$sem] = [];
@@ -80,7 +81,7 @@ while ($row = $result->fetch_assoc()) {
     $data[$sem][$branch][$room] = [];
   }
 
-  $data[$sem][$branch][$room][] = $roll;
+  $data[$sem][$branch][$room][] = [$roll, $course];
 }
 
 
@@ -89,22 +90,23 @@ $tableHtml = "";
 foreach ($data as $sem => $roomInfo) {
 
   $tableHtml .= "
-    <table border=1 style='width:88%; margin:15px; border-collapse:collapse;' class='report pdf-page'>
+    <table border=1 style='width:90%; margin: 15px auto; border-collapse:collapse;' class='report pdf-page'>
       <tr>
-        <th colspan='4'>Muthoot Institute of Technology and Science (Autonomous)</th>
+        <th colspan='5'>Muthoot Institute of Technology and Science (Autonomous)</th>
       </tr>
       <tr>
-        <th colspan='4'>Semester {$sem}, {$ename}</th>
+        <th colspan='5'>Semester {$sem}, {$ename}</th>
       </tr>
       <tr>
-        <th colspan='4'>Hall Allotment Plan</th>
+        <th colspan='5'>Hall Allotment Plan</th>
       </tr>
       <tr>
-        <th colspan='4'>Date of Exam: {$edate} &nbsp;&nbsp; Session: {$session}</th>
+        <th colspan='5'>Date of Exam: {$edate} &nbsp;&nbsp; Session: {$session}</th>
       </tr>
       <tr>
         <th>Branch</th>
         <th>Hall</th>
+        <th>Course</th>
         <th>Roll No.</th>
         <th>Total no of students</th>
       </tr>
@@ -112,40 +114,107 @@ foreach ($data as $sem => $roomInfo) {
 
   foreach ($roomInfo as $branch => $rinfo) {
 
-    $rowspan = count($rinfo) + 1;
+    $rowspan = 0;
+
+    foreach ($rinfo as $roomRolls) {
+      $coursesInRoom = [];
+
+      foreach ($roomRolls as [$roll, $course]) {
+        $course = str_replace(' ', '', $course);
+        $coursesInRoom[$course] = true;
+      }
+
+      $rowspan += count($coursesInRoom);
+    }
+
+    $rowspan += 1;
 
     $tableHtml .= "
-        <tr>
-          <th rowspan='{$rowspan}'>{$branch}</th>
-        ";
+      <tr>
+        <th rowspan='{$rowspan}'>{$branch}</th>
+      </tr>
+    ";
 
     foreach ($rinfo as $room => $rolls) {
 
-      $range = formatRangesPHP($rolls);
-      $count = count($rolls);
+      $groupedByCourse = [];
 
-      $tableHtml .= "
-            <tr>
-              <td>{$room}</td>
-              <td>{$range}</td>
-              <td>{$count}</td>
-            </tr>
+      foreach ($rolls as [$roll, $course]) {
+        $course = str_replace(' ', '', $course);
+        $groupedByCourse[$course][] = $roll;
+      }
+
+      foreach ($groupedByCourse as $course => $courseRolls) {
+
+        $range = formatRangesPHP($courseRolls);
+        $count = count($courseRolls);
+
+        $tableHtml .= "
+              <tr>
+                <td align='center' style='min-width:100px;'>{$room}</td>
+                <td align='center' class='secondary'>{$course}</td>
+                <td align='center' class='secondary'>{$range}</td>
+                <td align='center' class='secondary'>{$count}</td>
+              </tr>
             ";
+      }
     }
-
-    $tableHtml .= "</tr>";
   }
 
   $tableHtml .= "</table>";
 }
 
 
+
 $html = "
 <html>
 <head>
 <style>
-table { width:100%; border-collapse: collapse; page-break-after: always; }
-th, td { padding:6px; }
+@page {
+  size: A3;
+  margin: 12mm;
+}
+
+/* Table layout */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;           /* FIX: never use fixed */
+  page-break-after: always;
+  font-size: 20px;
+}
+
+/* Prevent rows from splitting */
+tr {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+td, th {
+  padding: 8px;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  vertical-align: middle;
+  font-weight:600;
+}
+
+
+
+/* Wrap long roll number ranges safely */
+td {
+  word-break: normal;           /* FIX: do NOT use break-all */
+  overflow-wrap: anywhere;     /* allows wrapping only when needed */
+}
+
+/* Kill Tailwind / flex / layout bugs */
+.report, .pdf-page, body, html {
+  display: block !important;
+  position: static !important;
+  overflow: visible !important;
+}
+
+
+
 </style>
 </head>
 
@@ -159,7 +228,7 @@ th, td { padding:6px; }
 file_put_contents("temp.html", $html);
 
 
-exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access temp.html report.pdf');
+exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access --page-size A3 temp.html report.pdf');
 
 
 header("Content-Type: application/pdf");

@@ -247,6 +247,9 @@
   .-bottom-0 {
     bottom: calc(var(--spacing) * -0);
   }
+  .-bottom-8 {
+    bottom: calc(var(--spacing) * -8);
+  }
   .bottom-8 {
     bottom: calc(var(--spacing) * 8);
   }
@@ -267,9 +270,6 @@
   }
   .z-50 {
     z-index: 50;
-  }
-  .z-100 {
-    z-index: 100;
   }
   .container {
     width: 100%;
@@ -312,9 +312,6 @@
   }
   .my-5 {
     margin-block: calc(var(--spacing) * 5);
-  }
-  .my-10 {
-    margin-block: calc(var(--spacing) * 10);
   }
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
@@ -607,9 +604,6 @@
   .w-\[80\%\] {
     width: 80%;
   }
-  .w-\[88\%\] {
-    width: 88%;
-  }
   .w-\[90\%\] {
     width: 90%;
   }
@@ -673,14 +667,23 @@
   .max-w-\[50\%\] {
     max-width: 50%;
   }
+  .max-w-\[390px\] {
+    max-width: 390px;
+  }
   .min-w-\[45\%\] {
     min-width: 45%;
   }
   .min-w-\[95\%\] {
     min-width: 95%;
   }
+  .min-w-\[300px\] {
+    min-width: 300px;
+  }
   .flex-1 {
     flex: 1;
+  }
+  .border-collapse {
+    border-collapse: collapse;
   }
   .scale-95 {
     --tw-scale-x: 95%;
@@ -847,9 +850,6 @@
   .border-\[\#FFFFFF\] {
     border-color: #FFFFFF;
   }
-  .border-black {
-    border-color: var(--color-black);
-  }
   .border-gray-100 {
     border-color: var(--color-gray-100);
   }
@@ -867,6 +867,9 @@
   }
   .bg-\[\#0F0E0E\] {
     background-color: #0F0E0E;
+  }
+  .bg-\[\#000000\] {
+    background-color: #000000;
   }
   .bg-\[\#2C2F2C\] {
     background-color: #2C2F2C;
@@ -904,8 +907,8 @@
   .bg-\[\#373737\] {
     background-color: #373737;
   }
-  .bg-\[\#545454\] {
-    background-color: #545454;
+  .bg-\[\#686868\] {
+    background-color: #686868;
   }
   .bg-\[\#E5E5E5\] {
     background-color: #E5E5E5;
@@ -940,6 +943,9 @@
   .to-\[\#0B5A40\] {
     --tw-gradient-to: #0B5A40;
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .p-1 {
+    padding: calc(var(--spacing) * 1);
   }
   .p-2 {
     padding: calc(var(--spacing) * 2);
@@ -1004,6 +1010,9 @@
   .font-medium {
     --tw-font-weight: var(--font-weight-medium);
     font-weight: var(--font-weight-medium);
+  }
+  .text-nowrap {
+    text-wrap: nowrap;
   }
   .break-all {
     word-break: break-all;
@@ -1227,21 +1236,12 @@ tr > td, tr > th {
 .primary {
   font-family: "Poppins";
 }
-.report > tbody > tr > td, .report > tbody > tr > th, .report > tbody > tr, .report {
-  background-color: white;
-  border: 1px solid black;
-  color: black;
+.tooltiptext {
+  opacity: 0;
+  transition: all ease-in-out 0.3s;
 }
-.pdf-page {
-  page-break-after: always;
-  break-after: page;
-  page-break-inside: avoid !important;
-  break-inside: avoid !important;
-}
-@media print {
-  table {
-    width: 100% !important;
-  }
+.tooltip:hover .tooltiptext {
+  opacity: 1;
 }
 @property --tw-scale-x {
   syntax: "*";

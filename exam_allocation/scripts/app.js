@@ -645,7 +645,6 @@ const reapplyEventListener = (ename) => document.querySelectorAll('.js-room-bloc
     .then(d => {
       let students = d.students;
       if(roomType == 'Drawing'){
-        localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:d.students,bSlots:[]}))
       let html = `<div class="w-[90%] flex flex-col border">
     <table class="font-['sans-serif']">
       <tr>
@@ -664,23 +663,38 @@ const reapplyEventListener = (ename) => document.querySelectorAll('.js-room-bloc
         <th>Hall No: ${roomId}</th>
       </tr>
     </table>
-    <div class="flex w-full justify-between gap-30">
-        <table class="w-[100%] h-fit">
+    <div class="flex w-full justify-between gap-10">
+        <table class="w-[50%] h-fit">
           <tr border="0">
             <th>Branch</th>
             <th>Roll No</th>
             <th>Seat</th>
           </tr>`
-      students.forEach(student => {
+      let arr1 = students.slice(0, Math.floor(students.length / 2));
+      let arr2 = students.slice(Math.floor(students.length / 2));
+      localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:arr1,bSlots:arr2}))
+      arr1.forEach(student => {
         html += `<tr>
             <td align="center">S${student.semester}  ${student.branch}</td>
             <td align="center">${student.rollno}</td>
             <td align="center">${student.seat}</td>
           </tr>`
       })
-      html += `</table>
-    </div>
-  </div>`
+      html += ` </table>
+    <table class="w-[50%] h-fit">
+          <tr border="0">
+            <th>Branch</th>
+            <th>Roll No</th>
+            <th>Seat</th>
+          </tr>`
+      arr2.forEach(student => {
+      html += `<tr>
+            <td align="center">S${student.semester}  ${student.branch}</td>
+            <td align="center">${student.rollno}</td>
+            <td align="center">${student.seat}</td>
+          </tr>`
+    })
+    html += `</table></div></div>`
       document.querySelector('.js-seating-data-container').innerHTML = html;
     }
     else{
@@ -806,7 +820,7 @@ async function generateReports(edate,session,aid,ename){
   let data2 = d2.reportData;
   let table = ``;
   Object.entries(data2).forEach(([rid, roomInfo]) => {
-    table += `<table class="w-[88%] h-fit report pdf-page m-4">
+    table += `<table class="w-[50%] h-fit report pdf-page m-4">
     <tr>
       <th colspan="4">Muthoot Institute of Technology and Science (Autonomous)</th>
     </tr>
@@ -826,22 +840,51 @@ async function generateReports(edate,session,aid,ename){
       <th>Total no of students</th>
     </tr>
     `
-     Object.entries(roomInfo).forEach(([branch,rinfo]) => {
-      table += `<tr>
-           <th rowspan=${Object.keys(rinfo).length+1}>${branch}</th>`
-      Object.entries(rinfo).forEach(([room,rinfo]) => {
-        table += `<tr>
-                    <td>${room}</td>
-                    <td>${formatRanges(rinfo)}</td>
-                    <td>${rinfo.length}</td>
-                  </tr>`
-      })
+     Object.entries(roomInfo).forEach(([branch, rinfo]) => {
+
+  // calculate correct rowspan
+  const branchRowCount = Object.values(rinfo).reduce(
+    (sum, roomData) => {
+      const courseCount = new Set(roomData.map(([_, course]) => course)).size;
+      return sum + courseCount;
+    },
+    0
+  );
+
+  table += `
+    <tr>
+      <th rowspan="${branchRowCount + 1}">${branch}</th>
+    </tr>
+  `;
+
+  Object.entries(rinfo).forEach(([room, roomData]) => {
+
+    const groupedByCourse = roomData.reduce((acc, [roll, course]) => {
+      if (!acc[course]) acc[course] = [];
+      acc[course].push(roll);
+      return acc;
+    }, {});
+
+    Object.entries(groupedByCourse).forEach(([course, rolls]) => {
+      table += `
+        <tr>
+          <td>${room}</td>
+          <td>${course}: ${formatRanges(rolls)}</td>
+          <td>${rolls.length}</td>
+        </tr>
+      `;
+    });
+
+  });
+
+});
+
       table+=`</tr>`
      })
       table+=` </table>`
-    })
-    document.querySelector('.js-hall-reports-div').innerHTML = table; 
-}
+         document.querySelector('.js-hall-reports-div').innerHTML = table; 
+
+    }
 
 
 document.getElementById('download-hall-reports').addEventListener('click',()=>{
@@ -898,7 +941,7 @@ document.querySelector('.js-download-room-report').addEventListener('click',()=>
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${edate}_${session}_${examName}_Seating_Report.pdf`;
+    a.download = `${roomId}_${edate}_${session}_${examName}_Seating_Report.pdf`;
     a.click();
 
   })

@@ -118,24 +118,11 @@ tr > th {
   font-family: "Poppins";
 }
 
-.report > tbody > tr > td,
-.report > tbody > tr > th,
-.report > tbody > tr,
-.report {
-  background-color: white;
-  border: 1px solid black;
-  color: black;
+.tooltiptext {
+  opacity: 0;
+  transition: all ease-in-out 0.3s;
 }
 
-.pdf-page {
-  page-break-after: always;
-  break-after: page;
-  page-break-inside: avoid !important;
-  break-inside: avoid !important;
-}
-
-@media print {
-  table {
-    width: 100% !important;
-  }
+.tooltip:hover .tooltiptext {
+  opacity: 1;
 }

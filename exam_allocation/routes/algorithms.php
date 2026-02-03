@@ -246,7 +246,6 @@ function algoTwo($conn, $semester1, $semester2, $orderfield1, $orderfield2, $roo
   } else {
     $grp2 = getStudData($conn, $semester2, $orderfield2, $edate, $session, $eid);
   }
-
   $x = count($grp1);
   $y = count($grp2);
 

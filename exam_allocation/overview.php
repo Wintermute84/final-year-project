@@ -80,8 +80,8 @@ if (isset($_GET['deleteId'])) {
       <div class="w-[100%] h-[600px] overflow-auto flex flex-wrap">
         <?php if ($result->num_rows > 0 && !isset($_GET['aid'])): ?>
           <?php while ($row = $result->fetch_assoc()): ?>
-            <div class="w-[300px] bg-black h-[250px] m-4 rounded-[8px] border border-gray-500 flex flex-col relative">
-              <div class="h-[50px] border-b border-b-gray-500  flex items-center justify-between">
+            <div class="min-w-[300px] max-w-[390px] bg-black h-[250px] m-4 rounded-[8px] border border-gray-500 flex flex-col relative">
+              <div class="h-[50px] border-b border-b-gray-500  flex items-center justify-between gap-3">
                 <p class="ml-2">
                   <?= $row['ename'] ?>
                 </p>
@@ -127,9 +127,15 @@ if (isset($_GET['deleteId'])) {
             </div>
           </section>
           <section class="flex-1 flex-col">
-            <div class="w-[300px] h-[60px] bg-[#545454] mx-auto mb-2 rounded-[8px] border border-white flex items-center justify-center gap-2">
-              <button @click="on=true" class="w-[45px] h-[45px] bg-white rounded-full border-2 border-black flex items-center justify-center"><img src="./assets/home.png" alt="home-icon"></button>
-              <button class="w-[45px] h-[45px] bg-white rounded-full border-2 border-black flex items-center justify-center js-download-room-report"><img src="./assets/download_2.png" alt="download-icon"></button>
+            <div class="w-[300px] h-[60px] bg-[#000000] mx-auto mb-5 rounded-[8px] border border-white flex items-center justify-center gap-2">
+              <button @click="on=true" class="tooltip w-[45px] h-[45px] bg-white rounded-full border-2 border-gray-500 flex items-center justify-center relative">
+                <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">View Semester Wise Reports</p>
+                <img src="./assets/home.png" alt="home-icon">
+              </button>
+              <button class="tooltip w-[45px] h-[45px] bg-white rounded-full border-2 border-gray-500 flex items-center justify-center js-download-room-report relative">
+                <img src="./assets/download_2.png" alt="download-icon">
+                <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">Download Hall Report</p>
+              </button>
             </div>
             <div class="w-full h-[500px] overflow-auto  js-seating-data-container">
 
@@ -141,14 +147,14 @@ if (isset($_GET['deleteId'])) {
     <div class="absolute inset-0 flex flex-col items-center justify-start bg-black z-40 opacity-100"
       x-show="on">
       <div class="w-full h-[20px] my-5 flex items-center justify-end">
-        <button class="cursor-pointer" id="download-hall-reports"><img src="./assets/download.png" alt="download icon" class="mr-4 h-[20px]"></button>
+        <button class="tooltip cursor-pointer relative z-50" id="download-hall-reports"><img src="./assets/download.png" alt="download icon" class="mr-4 h-[20px]">
+          <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm z-50 bg-[#686868] rounded-[4px] tooltiptext">Download Report</p>
+        </button>
         <img @click="on = false" src="./assets/close.png" alt="close icon" class="mr-4 h-[20px] cursor-pointer">
       </div>
 
-      <div class="flex-1 w-full bg-black z-100 flex flex-col items-center justify-start  rounded-[3px]">
-        <div class=" w-[80%] h-full bg-white z-100 flex flex-col items-center justify-start  rounded-[3px] relative overflow-auto js-hall-reports-div">
+      <div class="flex-1 w-full bg-black z-40 flex flex-col items-center justify-start  rounded-[3px] relative overflow-auto js-hall-reports-div">
 
-        </div>
       </div>
     </div>
   </main>

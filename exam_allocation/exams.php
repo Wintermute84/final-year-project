@@ -137,7 +137,7 @@ if (isset($_GET['delete_id'])) {
             <?php while ($row = $result->fetch_assoc()): ?>
               <div class="py-4 w-[80%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-div">
                 <a href="exams.php?eid=<?= $row['eid'] ?>&ename=<?= $row['ename'] ?>" class="w-fit flex flex-col ml-2">
-                  <p class="text-md">Exam Name - <?= $row['ename'] ?></p>
+                  <p class="text-md overflow-ellipsis text-nowrap">Exam Name - <?= $row['ename'] ?></p>
                   <p class="text-md">Exam Type - <?= $row['etype'] == "1" ? "Internal Exam" : "University Exam" ?></p>
                   <p class="text-md">Start Date - <?= $row['sdate'] ?></p>
                   <p class="text-md">End Date - <?= $row['edate'] ?></p>

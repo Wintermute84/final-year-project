@@ -26,27 +26,36 @@ if ($roomType == 'Drawing') {
 
   // ---- DRAWING ROOM (SINGLE COLUMN) ----
   $tableHtml .= "
-  <table border='1' style='width:88%; margin:15px; border-collapse:collapse;' class='pdf-page'>
+  <div class='pdf-page ding'>
+    <table border='1' style='width:100%;'>
     <tr>
-      <th colspan='3'>Muthoot Institute of Technology and Science (Autonomous)</th>
+      <th colspan='2'>Muthoot Institute of Technology and Science (Autonomous)</th>
     </tr>
     <tr>
-      <th colspan='3'>$ename</th>
+      <th colspan='2'>$ename</th>
     </tr>
     <tr>
-      <th colspan='3'>Date of Exam: $edate &nbsp;&nbsp; Session: $session</th>
+      <th colspan='2'>Date of Exam: $edate &nbsp;&nbsp; Session: $session</th>
     </tr>
     <tr>
-      <th colspan='3'>Hall Seating Arrangement</th>
+      <th colspan='2'>Hall Seating Arrangement</th>
     </tr>
     <tr>
-      <th colspan='3'>Hall No: $roomId</th>
+      <th colspan='2'>Hall No: $roomId</th>
     </tr>
+  </table>
+  <table width='100%' border='0'>
     <tr>
-      <th>Branch</th>
-      <th>Roll No</th>
-      <th>Seat</th>
-    </tr>
+
+      <!-- LEFT SIDE (A SLOTS) -->
+      <td width='50%' valign='top'>
+
+        <table border='1' width='100%' style='border-collapse:collapse;'>
+          <tr>
+            <th>Branch</th>
+            <th>Roll No</th>
+            <th>Seat</th>
+          </tr>
   ";
 
   foreach ($aSlots as $student) {
@@ -65,7 +74,45 @@ if ($roomType == 'Drawing') {
     ";
   }
 
-  $tableHtml .= "</table>";
+  $tableHtml .= "
+        </table>
+      </td>
+
+      <!-- RIGHT SIDE (B SLOTS) -->
+      <td width='50%' valign='top'>
+
+        <table border='1' width='100%' style='border-collapse:collapse;'>
+          <tr>
+            <th>Branch</th>
+            <th>Roll No</th>
+            <th>Seat</th>
+          </tr>
+  ";
+
+  foreach ($bSlots as $student) {
+
+    $semester = $student['semester'];
+    $branch   = $student['branch'];
+    $rollno   = $student['rollno'];
+    $seat     = $student['seat'];
+
+    $tableHtml .= "
+      <tr>
+        <td align='center'>S{$semester} {$branch}</td>
+        <td align='center'>{$rollno}</td>
+        <td align='center'>{$seat}</td>
+      </tr>
+    ";
+  }
+
+  $tableHtml .= "
+        </table>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  ";
 } else {
 
   // ---- NORMAL ROOM (TWO COLUMN LAYOUT WITHOUT FLEX) ----
@@ -175,6 +222,9 @@ table {
   page-break-inside: avoid;
 }
 
+.ding{
+border:1px solid black;
+}
 
 th, td {
   padding: 4px;
