@@ -8,7 +8,6 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
     --color-red-700: oklch(50.5% 0.213 27.518);
-    --color-emerald-900: oklch(37.8% 0.077 168.94);
     --color-gray-100: oklch(96.7% 0.003 264.542);
     --color-gray-500: oklch(55.1% 0.027 264.364);
     --color-gray-700: oklch(37.3% 0.034 259.733);
@@ -376,9 +375,6 @@
   .ml-6 {
     margin-left: calc(var(--spacing) * 6);
   }
-  .ml-16 {
-    margin-left: calc(var(--spacing) * 16);
-  }
   .block {
     display: block;
   }
@@ -526,9 +522,6 @@
   .h-\[600px\] {
     height: 600px;
   }
-  .h-\[700px\] {
-    height: 700px;
-  }
   .h-fit {
     height: fit-content;
   }
@@ -643,14 +636,8 @@
   .w-\[400px\] {
     width: 400px;
   }
-  .w-\[480px\] {
-    width: 480px;
-  }
   .w-\[500px\] {
     width: 500px;
-  }
-  .w-\[600px\] {
-    width: 600px;
   }
   .w-\[800px\] {
     width: 800px;
@@ -669,6 +656,9 @@
   }
   .max-w-\[390px\] {
     max-width: 390px;
+  }
+  .min-w-\[30\%\] {
+    min-width: 30%;
   }
   .min-w-\[45\%\] {
     min-width: 45%;
@@ -959,8 +949,14 @@
   .px-3 {
     padding-inline: calc(var(--spacing) * 3);
   }
+  .px-12 {
+    padding-inline: calc(var(--spacing) * 12);
+  }
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
+  }
+  .py-3 {
+    padding-block: calc(var(--spacing) * 3);
   }
   .py-4 {
     padding-block: calc(var(--spacing) * 4);
@@ -1017,8 +1013,8 @@
   .break-all {
     word-break: break-all;
   }
-  .text-emerald-900 {
-    color: var(--color-emerald-900);
+  .overflow-ellipsis {
+    text-overflow: ellipsis;
   }
   .text-white {
     color: var(--color-white);
@@ -1139,8 +1135,38 @@
       }
     }
   }
+  .sm\:mt-4 {
+    @media (width >= 40rem) {
+      margin-top: calc(var(--spacing) * 4);
+    }
+  }
+  .sm\:w-\[60\%\] {
+    @media (width >= 40rem) {
+      width: 60%;
+    }
+  }
+  .md\:w-\[30\%\] {
+    @media (width >= 48rem) {
+      width: 30%;
+    }
+  }
+  .lg\:mt-0 {
+    @media (width >= 64rem) {
+      margin-top: calc(var(--spacing) * 0);
+    }
+  }
+  .lg\:w-\[20\%\] {
+    @media (width >= 64rem) {
+      width: 20%;
+    }
+  }
+  .lg\:flex-row {
+    @media (width >= 64rem) {
+      flex-direction: row;
+    }
+  }
 }
-* {
+:root {
   font-family: "Geist";
   color: white;
 }
@@ -1242,6 +1268,24 @@ tr > td, tr > th {
 }
 .tooltip:hover .tooltiptext {
   opacity: 1;
+}
+.nav-bar > p {
+  font-size: 99%;
+}
+.selected-date, .active {
+  color: black;
+  background-color: rgb(255, 255, 255);
+}
+@media (width < 900px) {
+  * {
+    font-size: 0.9rem;
+  }
+  .nav-bar {
+    width: 90%;
+  }
+  .nav-bar > p {
+    font-size: 60%;
+  }
 }
 @property --tw-scale-x {
   syntax: "*";

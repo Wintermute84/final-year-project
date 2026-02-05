@@ -38,7 +38,7 @@ if (isset($_POST['upload'])) {
 
 <body x-data="{on: false}" class="bg-black h-screen flex flex-col relative">
 
-  <header class="border-b-2 h-[100px] border-[#FFFFFF] flex relative">
+  <header class="border-b-2 min-h-[100px] h-fit border-[#FFFFFF] flex relative">
     <div class="flex items-center justify-between w-full">
       <div class="w-[25px] h-[25px] bg-[#9E9B9B] border-3 rounded-sm border-[#FFFEFE] ml-3"></div>
       <div x-data="{ open: false }" class="relative inline-block">
@@ -59,7 +59,7 @@ if (isset($_POST['upload'])) {
         </div>
       </div>
     </div>
-    <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none">
+    <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none nav-bar">
       <img src="./assets/ham_menu.png" alt="hamburger menu" class="hidden">
       <p class="secondary cursor-pointer" onclick="window.location.href='overview.php'">Overview</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='seating_plan.php?step=1'">Seating Plan</p>
@@ -71,7 +71,7 @@ if (isset($_POST['upload'])) {
       <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
     </div>
   </header>
-  <main class="flex-1 flex">
+  <main class="flex-1 flex ">
     <section class="relative flex-1 flex items-center justify-center">
       <div class=" absolute bg-white w-[0.5px] h-[95%] right-0"></div>
       <div class="w-[60%] h-[60%] grid grid-rows-6 grid-flow-col js-view-room-container">
@@ -79,7 +79,7 @@ if (isset($_POST['upload'])) {
     </section>
     <section class="flex-1 flex items-start justify-center mt-5">
       <div class="w-[80%] h-[80%]">
-        <div x-data="{ open: false }" class="flex items-center justify-between m-2">
+        <div x-data="{ open: false }" class="flex items-center justify-between m-2 gap-3">
           <button @click="on = true" class="h-[50px] w-[200px] bg-[#E5E5E5] rounded-sm cursor-pointer">Upload CSV</button>
           <div @click="open = !open"
             class="flex items-center justify-between relative border h-[35px] w-[200px] px-2 rounded-md bg-[#373737] cursor-pointer">

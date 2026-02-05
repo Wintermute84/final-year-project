@@ -38,7 +38,7 @@ if (isset($_GET['delete_id'])) {
 
 <body x-data="{on: false}" class="bg-black h-screen flex flex-col relative">
 
-  <header class="border-b-2 h-[100px] border-[#FFFFFF] flex relative">
+  <header class="border-b-2 min-h-[100px] h-fit border-[#FFFFFF] flex relative">
     <div class="flex items-center justify-between w-full">
       <div class="w-[25px] h-[25px] bg-[#9E9B9B] border-3 rounded-sm border-[#FFFEFE] ml-3"></div>
       <div x-data="{ open: false }" class="relative inline-block">
@@ -59,9 +59,9 @@ if (isset($_GET['delete_id'])) {
         </div>
       </div>
     </div>
-    <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none">
+    <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none nav-bar">
       <img src="./assets/ham_menu.png" alt="hamburger menu" class="hidden">
-      <p class="secondary cursor-pointer" onclick="window.location.href='overview.php'">Overview</p>
+      <p class="secondary cursor-pointer " onclick="window.location.href='overview.php'">Overview</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='seating_plan.php?step=1'">Seating Plan</p>
       <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='exams.php'">Exams</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='view_rooms.php'">Rooms</p>
@@ -110,7 +110,7 @@ if (isset($_GET['delete_id'])) {
     </section>
     <section class="flex-1 flex items-start justify-center mt-5">
       <div class="w-[80%] h-[80%]">
-        <div x-data="{ open: false }" class="flex items-center justify-between m-2">
+        <div x-data="{ open: false }" class="flex items-center justify-between m-2 gap-3">
           <button @click="on = true" class="h-[50px] w-[200px] bg-[#E5E5E5] rounded-sm cursor-pointer">Upload CSV</button>
           <div @click="open = !open"
             class="flex items-center justify-between relative border h-[35px] w-[200px] px-2 rounded-md bg-[#373737] cursor-pointer">
@@ -135,14 +135,14 @@ if (isset($_GET['delete_id'])) {
         <div class="flex flex-col w-full items-end mt-10 gap-2 overflow-auto h-[400px]">
           <?php if ($result->num_rows > 0): ?>
             <?php while ($row = $result->fetch_assoc()): ?>
-              <div class="py-4 w-[80%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-div">
+              <div class="<?= (isset($_GET['eid']) && ($_GET['eid'] == $row['eid'])) ? "active" : "bg-[#151515]" ?> py-4 px-2 w-fit min-h-[110px] max-h-[120px] cursor-pointer  mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out">
                 <a href="exams.php?eid=<?= $row['eid'] ?>&ename=<?= $row['ename'] ?>" class="w-fit flex flex-col ml-2">
                   <p class="text-md overflow-ellipsis text-nowrap">Exam Name - <?= $row['ename'] ?></p>
                   <p class="text-md">Exam Type - <?= $row['etype'] == "1" ? "Internal Exam" : "University Exam" ?></p>
                   <p class="text-md">Start Date - <?= $row['sdate'] ?></p>
                   <p class="text-md">End Date - <?= $row['edate'] ?></p>
                 </a>
-                <div class="flex gap-2 mr-4">
+                <div class="flex gap-2">
                   <a href="exams.php?delete_id=<?= $row['eid'] ?>"
                     onclick="return confirm('Delete this Exam and related data?');"
                     class="h-[35px] w-[35px] bg-white flex items-center justify-center border rounded-md">
@@ -159,32 +159,32 @@ if (isset($_GET['delete_id'])) {
     </section>
   </main>
   <div class="absolute inset-0 flex items-center justify-center bg-black z-40 opacity-96" x-show="on">
-    <div class="w-[600px] h-[700px] bg-[#131313] z-50 border-[#D9D9D9] border-2  rounded-[3px] relative">
+    <div class="w-fit h-fit bg-[#131313] z-50 border-[#D9D9D9] border-2  rounded-[3px] relative px-12 py-3">
       <img @click="on = false" src="./assets/close.png" alt="close icon" class="absolute top-3 right-0 mr-4 h-[20px] cursor-pointer">
       <div class="relative flex w-full h-[50px] items-center justify-center select-none mt-6">
         <p class="text-2xl">Enter Exam Details</p>
       </div>
       <form method="post" enctype="multipart/form-data" class="flex flex-col justify-center gap-4 mt-8">
-        <label for="examNameInput" class="flex flex-col ml-16">
+        <label for="examNameInput" class="flex flex-col">
           Exam Name
           <input type="text" id="examNameInput" name="examNameInput" class="border-2 px-3 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]">
         </label>
-        <label for="examTypeInput" class="flex flex-col ml-16">
+        <label for="examTypeInput" class="flex flex-col">
           Exam Type
           <select id="examTypeInput" class="px-3 border-2 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]" name="examTypeInput">
             <option value="1">Internal</option>
             <option value="2">University</option>
           </select>
         </label>
-        <label for="startDateInput" class="flex flex-col ml-16">
+        <label for="startDateInput" class="flex flex-col">
           Start Date
           <input type="date" id="startDateInput" name="startDateInput" class="px-3 border-2 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]">
         </label>
-        <label for="endDateInput" class="flex flex-col ml-16">
+        <label for="endDateInput" class="flex flex-col">
           End Date
           <input type="date" name="endDateInput" id="endDateInput" class="px-3 border-2 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]">
         </label>
-        <div class="flex flex-col ml-16 gap-2">
+        <div class="flex flex-col  gap-2">
           <p>Exam Time Table Upload</p>
           <div class="flex gap-2 items-center justify-start">
             <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label" for="file">Choose File</label>

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-* {
+:root {
   font-family: "Geist";
   color: white;
 }
@@ -125,4 +125,28 @@ tr > th {
 
 .tooltip:hover .tooltiptext {
   opacity: 1;
+}
+
+.nav-bar > p {
+  font-size: 99%;
+}
+
+.selected-date,
+.active {
+  color: black;
+  background-color: rgb(255, 255, 255);
+}
+
+@media (width < 900px) {
+  * {
+    font-size: 0.9rem;
+  }
+
+  .nav-bar {
+    width: 90%;
+  }
+
+  .nav-bar > p {
+    font-size: 60%;
+  }
 }

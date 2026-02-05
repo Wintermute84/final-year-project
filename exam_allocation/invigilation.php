@@ -21,7 +21,7 @@ if (!isset($_SESSION["uid"])) {
 
 <body x-data="{on: false}" class="bg-black h-screen flex flex-col relative">
 
-  <header class="border-b-2 h-[100px] border-[#FFFFFF] flex relative">
+  <header class="border-b-2 min-h-[100px] h-fit border-[#FFFFFF] flex relative">
     <div class="flex items-center justify-between w-full">
       <div class="w-[25px] h-[25px] bg-[#9E9B9B] border-3 rounded-sm border-[#FFFEFE] ml-3"></div>
       <div x-data="{ open: false }" class="relative inline-block">
@@ -42,7 +42,7 @@ if (!isset($_SESSION["uid"])) {
         </div>
       </div>
     </div>
-    <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none">
+    <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none nav-bar">
       <img src="./assets/ham_menu.png" alt="hamburger menu" class="hidden">
       <p class="secondary cursor-pointer" onclick="window.location.href='overview.php'">Overview</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='seating_plan.php?step=1'">Seating Plan</p>

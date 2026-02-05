@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
         </div>
       </div>
     </div>
-    <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none">
+    <div class="flex absolute -bottom-0 w-[70%] justify-evenly text-[18px] ml-5 select-none nav-bar">
       <img src="./assets/ham_menu.png" alt="hamburger menu" class="hidden">
       <p class="secondary cursor-pointer" onclick="window.location.href='overview.php'">Overview</p>
       <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='seating_plan.php?step=1'">Seating Plan</p>
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
       <form class="w-[95%] h-[90%] bg-[#0F0E0E]  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
         <div class="m-2 p-2">
           <p class="text-2xl">Generate Seating Plan</p>
-          <p class="text-sm text-emerald-900">Step 1 of 4</p>
+          <p class="text-sm ">Step 1 of 4</p>
           <div class="flex gap-2 mt-2">
             <div class="w-[25px] h-[25px] rounded-full flex items-center justify-center text-sm bg-[#55A648]">1</div>
             <div class="w-[25px] h-[25px] bg-[#2C2F2C] rounded-full flex items-center justify-center text-sm">2</div>
@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
       <form class="w-[95%] h-[90%] bg-[#0F0E0E]  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
         <div class="m-2 p-2">
           <p class="text-2xl">Generate Seating Plan</p>
-          <p class="text-sm text-emerald-900">Step 2 of 4</p>
+          <p class="text-sm">Step 2 of 4</p>
           <div class="flex gap-2 mt-2">
             <div class="w-[25px] h-[25px] bg-[#2C2F2C] rounded-full flex items-center justify-center text-sm">1</div>
             <div class="w-[25px] h-[25px] bg-[#55A648] rounded-full flex items-center justify-center text-sm">2</div>
@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
       <form class="w-[95%] h-[90%] bg-[#0F0E0E]  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
         <div class="m-2 p-2">
           <p class="text-2xl">Generate Seating Plan</p>
-          <p class="text-sm text-emerald-900">Step 3 of 4</p>
+          <p class="text-sm">Step 3 of 4</p>
           <div class="flex gap-2 mt-2">
             <div class="w-[25px] h-[25px] rounded-full flex items-center justify-center text-sm bg-[#2C2F2C]">1</div>
             <div class="w-[25px] h-[25px] bg-[#2C2F2C] rounded-full flex items-center justify-center text-sm">2</div>
@@ -227,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
         </a>
         <div class="m-2 p-2">
           <p class="text-2xl">Generate Seating Plan</p>
-          <p class="text-sm text-emerald-900">Step 4 of 4</p>
+          <p class="text-sm">Step 4 of 4</p>
           <div class="flex gap-2 mt-2">
             <div class="w-[25px] h-[25px] rounded-full flex items-center justify-center text-sm bg-[#2C2F2C]">1</div>
             <div class="w-[25px] h-[25px] bg-[#2C2F2C] rounded-full flex items-center justify-center text-sm">2</div>

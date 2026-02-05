@@ -8,9 +8,24 @@ document.querySelectorAll(".js-room-div").forEach(div => (
   div.addEventListener('click',()=>{
     const capacity = div.dataset.capacity;
     const id = div.dataset.roomId; 
+    higlightDiv({id:id,},".js-room-div")
     viewRooms(capacity,id);
   })
 ))
+
+function higlightDiv(dataObj,jsClass){
+  if(jsClass === ".js-room-div"){
+    document.querySelectorAll(jsClass).forEach(div => {
+      const id = div.dataset.roomId
+      if(id == dataObj.id){
+        div.classList.add("active")
+      }
+      else{
+        div.classList.remove("active")
+      }
+    })
+  }
+}
 
  
 let rooms = []
@@ -100,6 +115,7 @@ document.getElementById("proceedBtn")?.addEventListener("click", () => {
 document.querySelectorAll(".js-slot-div").forEach(div => {
   div.addEventListener("click", () => {
     const { eid, edate: date, session: session } = div.dataset;
+    highlightSelectedDiv(date,session,".js-slot-div");
     const key = `semGroups_${eid}_${date}_${session}`;
     fetch("./routes/get_sems.php", {
       method: "POST",
@@ -294,6 +310,18 @@ let grid3 = []
 let grid4 = []
 let slotkey = ``
 
+function highlightSelectedDiv(selectedDate,selectedSession,jsClass){
+  document.querySelectorAll(jsClass).forEach(div => {
+    const { edate: date, session: session } = div.dataset;
+    if(date === selectedDate && selectedSession === session){
+      div.classList.add('selected-date');
+    }
+    else{
+      div.classList.remove('selected-date');
+    }
+  })
+}
+
 document.querySelectorAll(".js-shuffle-div").forEach(div => {
   div.addEventListener("click", () => {
     groupMatching = {}
@@ -309,6 +337,7 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
     document.querySelector(".available-branches-div").innerHTML = ""
     oddBranch = null;
     const { eid, edate: date, session: session } = div.dataset;
+    highlightSelectedDiv(date,session,".js-shuffle-div");
     const key = `semGroups_${eid}_${date}_${session}`;
     slotkey = `S${eid}_${date}_${session}`
     let sg = JSON.parse(localStorage.getItem('groupings'))
