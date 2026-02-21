@@ -32,11 +32,15 @@ button {
   background: transparent;
 }
 
+#file-label1,
+#file-label2,
 #file-label {
   color: black;
   padding: 8px;
 }
 
+#file1,
+#file2,
 #file {
   position: absolute;
   visibility: hidden;

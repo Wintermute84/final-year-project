@@ -19,195 +19,176 @@ $roomType = $input['roomType'];
 $roomId = $input['roomId'];
 $aSlots = $input['aSlots'];
 $bSlots = $input['bSlots'];
+$etype = $input['etype'];
 
-$tableHtml = "";
+$aCounts = [];
+foreach ($aSlots as $s) {
+  $sem    = $s['semester'] ?? '';
+  $key    = $sem . '|' . $s['branch'] . '|' . $s['course'];
+  $aCounts[$key] = ($aCounts[$key] ?? 0) + 1;
+}
 
-if ($roomType == 'Drawing') {
+$aPrinted = [];
+foreach ($aSlots as &$s) {
 
-  // ---- DRAWING ROOM (SINGLE COLUMN) ----
-  $tableHtml .= "
-  <div class='pdf-page ding'>
-    <table border='1' style='width:100%;'>
-    <tr>
-      <th colspan='2'>Muthoot Institute of Technology and Science (Autonomous)</th>
-    </tr>
-    <tr>
-      <th colspan='2'>$ename</th>
-    </tr>
-    <tr>
-      <th colspan='2'>Date of Exam: $edate &nbsp;&nbsp; Session: $session</th>
-    </tr>
-    <tr>
-      <th colspan='2'>Hall Seating Arrangement</th>
-    </tr>
-    <tr>
-      <th colspan='2'>Hall No: $roomId</th>
-    </tr>
+  $sem = $s['semester'] ?? '';
+  $key = $sem . '|' . $s['branch'] . '|' . $s['course'];
+
+  $s['rowspan']    = 0;
+  $s['printGroup'] = false;
+
+  if (!isset($aPrinted[$key])) {
+    $s['rowspan']    = $aCounts[$key];
+    $s['printGroup'] = true;
+    $aPrinted[$key]  = true;
+  }
+}
+unset($s);
+
+
+$bCounts = [];
+foreach ($bSlots as $s) {
+  $sem    = $s['semester'] ?? '';
+  $key    = $sem . '|' . $s['branch'] . '|' . $s['course'];
+  $bCounts[$key] = ($bCounts[$key] ?? 0) + 1;
+}
+
+$bPrinted = [];
+foreach ($bSlots as &$s) {
+
+  $sem = $s['semester'] ?? '';
+  $key = $sem . '|' . $s['branch'] . '|' . $s['course'];
+
+  $s['rowspan']    = 0;
+  $s['printGroup'] = false;
+
+  if (!isset($bPrinted[$key])) {
+    $s['rowspan']    = $bCounts[$key];
+    $s['printGroup'] = true;
+    $bPrinted[$key]  = true;
+  }
+}
+unset($s);
+
+$tableHtml = "
+<div class='pdf-page ding'>
+  <table border='1' style='width:100%;'>
+    <tr><th colspan='2'>Muthoot Institute of Technology and Science (Autonomous)</th></tr>
+    <tr><th colspan='2'>$ename</th></tr>
+    <tr><th colspan='2'>Date of Exam: $edate &nbsp;&nbsp; Session: $session</th></tr>
+    <tr><th colspan='2'>Hall Seating Arrangement</th></tr>
+    <tr><th colspan='2'>Hall No: $roomId</th></tr>
   </table>
+
   <table width='100%' border='0'>
     <tr>
 
-      <!-- LEFT SIDE (A SLOTS) -->
       <td width='50%' valign='top'>
 
         <table border='1' width='100%' style='border-collapse:collapse;'>
           <tr>
-            <th>Branch</th>
+            <th style='width:40%;'>Branch</th>
             <th>Roll No</th>
             <th>Seat</th>
           </tr>
-  ";
+";
 
-  foreach ($aSlots as $student) {
 
-    $semester = $student['semester'];
-    $branch   = $student['branch'];
-    $rollno   = $student['rollno'];
-    $seat     = $student['seat'];
+foreach ($aSlots as $student) {
+
+  $semester = $student['semester'] ?? null;
+  $branch   = $student['branch'];
+  $rollno   = $etype == 1 ? $student['rollno'] : $student['reg_no'];
+  $seat     = $student['seat'];
+  $course   = $student['course'];
+
+  $tableHtml .= "<tr>";
+
+  if ($student['printGroup']) {
+
+    $label   = "
+      <div>
+        <div>" . ($semester ? "S$semester" : "") . " $branch</div>
+        <div style='font-size:16px;'>($course)</div>
+      </div>
+    ";
+
+    $rowspan = $student['rowspan'];
 
     $tableHtml .= "
-      <tr>
-        <td align='center'>S{$semester} {$branch}</td>
-        <td align='center'>{$rollno}</td>
-        <td align='center'>{$seat}</td>
-      </tr>
+      <td align='center' rowspan='{$rowspan}' style='vertical-align:middle; width:40%; padding:4px;'>
+        {$label}
+      </td>
     ";
   }
 
   $tableHtml .= "
-        </table>
-      </td>
-
-      <!-- RIGHT SIDE (B SLOTS) -->
-      <td width='50%' valign='top'>
-
-        <table border='1' width='100%' style='border-collapse:collapse;'>
-          <tr>
-            <th>Branch</th>
-            <th>Roll No</th>
-            <th>Seat</th>
-          </tr>
-  ";
-
-  foreach ($bSlots as $student) {
-
-    $semester = $student['semester'];
-    $branch   = $student['branch'];
-    $rollno   = $student['rollno'];
-    $seat     = $student['seat'];
-
-    $tableHtml .= "
-      <tr>
-        <td align='center'>S{$semester} {$branch}</td>
-        <td align='center'>{$rollno}</td>
-        <td align='center'>{$seat}</td>
-      </tr>
-    ";
-  }
-
-  $tableHtml .= "
-        </table>
-
-      </td>
+      <td align='center'>{$rollno}</td>
+      <td align='center'>{$seat}</td>
     </tr>
-  </table>
-  </div>
-  ";
-} else {
-
-  // ---- NORMAL ROOM (TWO COLUMN LAYOUT WITHOUT FLEX) ----
-
-  $tableHtml .= "
-  <div class='pdf-page ding'>
-    <table border='1' style='width:100%;'>
-    <tr>
-      <th colspan='2'>Muthoot Institute of Technology and Science (Autonomous)</th>
-    </tr>
-    <tr>
-      <th colspan='2'>$ename</th>
-    </tr>
-    <tr>
-      <th colspan='2'>Date of Exam: $edate &nbsp;&nbsp; Session: $session</th>
-    </tr>
-    <tr>
-      <th colspan='2'>Hall Seating Arrangement</th>
-    </tr>
-    <tr>
-      <th colspan='2'>Hall No: $roomId</th>
-    </tr>
-  </table>
-  <table width='100%' border='0'>
-    <tr>
-
-      <!-- LEFT SIDE (A SLOTS) -->
-      <td width='50%' valign='top'>
-
-        <table border='1' width='100%' style='border-collapse:collapse;'>
-          <tr>
-            <th>Branch</th>
-            <th>Roll No</th>
-            <th>Seat</th>
-          </tr>
-  ";
-
-  foreach ($aSlots as $student) {
-
-    $semester = $student['semester'];
-    $branch   = $student['branch'];
-    $rollno   = $student['rollno'];
-    $seat     = $student['seat'];
-
-    $tableHtml .= "
-      <tr>
-        <td align='center'>S{$semester} {$branch}</td>
-        <td align='center'>{$rollno}</td>
-        <td align='center'>{$seat}</td>
-      </tr>
-    ";
-  }
-
-  $tableHtml .= "
-        </table>
-      </td>
-
-      <!-- RIGHT SIDE (B SLOTS) -->
-      <td width='50%' valign='top'>
-
-        <table border='1' width='100%' style='border-collapse:collapse;'>
-          <tr>
-            <th>Branch</th>
-            <th>Roll No</th>
-            <th>Seat</th>
-          </tr>
-  ";
-
-  foreach ($bSlots as $student) {
-
-    $semester = $student['semester'];
-    $branch   = $student['branch'];
-    $rollno   = $student['rollno'];
-    $seat     = $student['seat'];
-
-    $tableHtml .= "
-      <tr>
-        <td align='center'>S{$semester} {$branch}</td>
-        <td align='center'>{$rollno}</td>
-        <td align='center'>{$seat}</td>
-      </tr>
-    ";
-  }
-
-  $tableHtml .= "
-        </table>
-
-      </td>
-    </tr>
-  </table>
-  </div>
   ";
 }
 
-// ---- FINAL HTML WRAPPER ----
+$tableHtml .= "
+        </table>
+      </td>
+
+      <td width='50%' valign='top'>
+
+        <table border='1' width='100%' style='border-collapse:collapse;'>
+          <tr>
+            <th style='width:40%;'>Branch</th>
+            <th>Roll No</th>
+            <th>Seat</th>
+          </tr>
+";
+
+
+foreach ($bSlots as $student) {
+
+  $semester = $student['semester'] ?? null;
+  $branch   = $student['branch'];
+  $rollno   = $etype == 1 ? $student['rollno'] : $student['reg_no'];
+  $seat     = $student['seat'];
+  $course   = $student['course'];
+
+  $tableHtml .= "<tr>";
+
+  if ($student['printGroup']) {
+
+    $label   = "
+      <div>
+        <div>" . ($semester ? "S$semester" : "") . " $branch</div>
+        <div style='font-size:16px;'>($course)</div>
+      </div>
+    ";
+
+    $rowspan = $student['rowspan'];
+
+    $tableHtml .= "
+      <td align='center' rowspan='{$rowspan}' style='vertical-align:middle;'>
+        {$label}
+      </td>
+    ";
+  }
+
+  $tableHtml .= "
+      <td align='center'>{$rollno}</td>
+      <td align='center'>{$seat}</td>
+    </tr>
+  ";
+}
+
+$tableHtml .= "
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</div>
+";
+
+
 
 $html = "
 <html>

@@ -9,11 +9,16 @@ if (isset($_GET['step'])) {
   $_SESSION['step'] = (int) $_GET['step'];
 }
 
+$examType = $_SESSION['examType'] ?? null;
 $result = getExams($conn, 'All');
 $rooms = getRooms($conn, 'All');
 //$blocks = getBlocks($conn);
-if (isset($_SESSION['eid'])) {
-  $examInfo = getExamInfo($conn, $_SESSION['eid']);
+if (isset($_SESSION['eid']) && isset($_SESSION['examType'])) {
+  if ($_SESSION['examType'] == 1) {
+    $examInfo = getExamInfo($conn, $_SESSION['eid']);
+  } elseif ($_SESSION['examType'] == 2) {
+    $uniExamInfo = getUniversityExamInfo($conn, $_SESSION['eid']);
+  }
 }
 
 
@@ -21,11 +26,16 @@ $step = $_SESSION['step'] ?? 1;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
   $examId = $_POST['selected_exam_id'] ?? null;
+  $examType = $_POST['selected_exam_type'] ?? null;
   if (!$examId) {
     die("exam not selected");
   }
+  if (!$examType) {
+    die("exam type error!");
+  }
   $_SESSION['step'] = 2;
   $_SESSION['eid'] = (int) $examId;
+  $_SESSION['examType'] = $examType;
   header("Location: seating_plan.php");
 }
 ?>
@@ -97,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
                 <?php while ($row = $result->fetch_assoc()): ?>
                   <div
                     class="py-4 w-[80%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-exam-div"
-                    data-eid="<?= $row['eid'] ?>">
+                    data-eid="<?= $row['eid'] ?>" data-etype="<?= $row['etype'] ?>">
                     <div class="w-fit flex flex-col ml-2">
                       <p class="text-md select-none">Exam Name - <?= $row['ename'] ?></p>
                       <p class="text-md select-none">Exam Type - <?= $row['etype'] == "1" ? "Internal Exam" : "University Exam" ?></p>
@@ -111,6 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
               <?php endif; ?>
             </div>
             <input type="hidden" name="selected_exam_id" id="selectedExamId">
+            <input type="hidden" name="selected_exam_type" id="selectedExamType">
             <div class="absolute bottom-13 flex gap-6">
               <button class="h-10 w-[100px] border-white bg-white rounded-md" type="submit">Proceed</button>
             </div>
@@ -219,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
         </div>
       </form>
     <?php endif; ?>
-    <?php if ($step === 4): ?>
+    <?php if ($step === 4 && $examType == 1): ?>
       <form class="w-[95%] h-fit bg-[#0F0E0E] relative  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
         <a href="help.php" target="_blank" class="gap-1 h-10 w-20 bg-white absolute right-5 top-4 help-button flex items-center justify-center rounded-[8px] hover:opacity-80">
           <p class="secondary-font">Help</p>
@@ -286,6 +297,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
                 <div class="bg-[#292929] w-[320px] h-[200px] relative border border-2-white rounded-[4px]">
                   <p class="secondary absolute -top-6 left-0 js-shuffle-four shuffle-div"></p>
                   <div class="w-full h-full overflow-auto js-shuffle-four-div flex flex-col gap-2 p-3">
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </form>
+    <?php endif; ?>
+    <?php if ($step === 4 && $examType == 2): ?>
+      <form class="w-[95%] h-fit bg-[#0F0E0E] relative  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
+        <a href="help.php" target="_blank" class="gap-1 h-10 w-20 bg-white absolute right-5 top-4 help-button flex items-center justify-center rounded-[8px] hover:opacity-80">
+          <p class="secondary-font">Help</p>
+          <img src="assets/help.png" class="h-4" alt="help-icon">
+        </a>
+        <div class="m-2 p-2">
+          <p class="text-2xl">Generate Seating Plan</p>
+          <p class="text-sm">Step 4 of 4</p>
+          <div class="flex gap-2 mt-2">
+            <div class="w-[25px] h-[25px] rounded-full flex items-center justify-center text-sm bg-[#2C2F2C]">1</div>
+            <div class="w-[25px] h-[25px] bg-[#2C2F2C] rounded-full flex items-center justify-center text-sm">2</div>
+            <div class="w-[25px] h-[25px] bg-[#2C2F2C] rounded-full flex items-center justify-center text-sm">3</div>
+            <div class="w-[25px] h-[25px] bg-[#55A648] rounded-full flex items-center justify-center text-sm">4</div>
+          </div>
+          <p class="secondary mt-2">Select Shuffle Type.</p>
+          <p class="secondary">Grouped Slots will be marked in green.</p>
+          <div class="mt-4 flex">
+            <div class="overflow-auto max-h-[300px] w-[30%] flex flex-col gap-2">
+              <?php if ($uniExamInfo->num_rows > 0): ?>
+                <?php while ($row = $uniExamInfo->fetch_assoc()): ?>
+                  <div
+                    class="<?= "S" . $_SESSION['eid'] . "_" . $row['edate'] . "_" . $row['session'] ?> py-4 min-w-[45%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-uni-shuffle-div"
+                    data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-eid="<?= $_SESSION['eid'] ?>">
+                    <div class="w-fit flex flex-col ml-2">
+                      <p class="text-md select-none">Exam Date - <?= $row['edate'] ?></p>
+                      <p class="text-md select-none">Session - <?= $row['session'] ?></p>
+                    </div>
+                  </div>
+                <?php endwhile; ?>
+              <?php else: ?>
+                <p>No Data found.</p>
+              <?php endif; ?>
+            </div>
+            <div class="absolute bottom-13 flex gap-6">
+              <a href="seating_plan.php?step=3" class="h-10 w-[100px] border-white bg-[#252323] button-secondary rounded-md flex items-center justify-center">Back</a>
+              <button id="uniProceedButton" class="h-10 w-[100px] border-white bg-white rounded-md" type="button">Proceed</button>
+            </div>
+            <div class="flex flex-1 mx-4 gap-2">
+              <div class="w-[350px] h-[400px] bg-[#201d1d] border border-2-white p-2 rounded-md relative ">
+                <p class="secondary absolute -top-6 left-0">Available Branches</p>
+                <div class="w-full h-full overflow-auto available-branches-div flex flex-col gap-3 pr-3">
+
+                </div>
+              </div>
+              <div class="w-full h-full flex flex-wrap gap-8 ml-2">
+                <div class="bg-[#292929] w-[360px] h-[300px] relative border border-2-white rounded-[4px]">
+                  <p class="secondary absolute -top-6 left-0 js-shuffle-one shuffle-div">University Shuffle Order</p>
+                  <div class="w-full h-full overflow-auto js-shuffle-one-div flex flex-col gap-2 p-3">
 
                   </div>
                 </div>

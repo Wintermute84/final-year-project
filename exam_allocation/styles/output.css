@@ -510,6 +510,9 @@
   .h-\[280px\] {
     height: 280px;
   }
+  .h-\[300px\] {
+    height: 300px;
+  }
   .h-\[400px\] {
     height: 400px;
   }
@@ -603,6 +606,9 @@
   .w-\[95\%\] {
     width: 95%;
   }
+  .w-\[98\%\] {
+    width: 98%;
+  }
   .w-\[99\%\] {
     width: 99%;
   }
@@ -632,6 +638,9 @@
   }
   .w-\[350px\] {
     width: 350px;
+  }
+  .w-\[360px\] {
+    width: 360px;
   }
   .w-\[400px\] {
     width: 400px;
@@ -758,6 +767,11 @@
   }
   .gap-30 {
     gap: calc(var(--spacing) * 30);
+  }
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .overflow-auto {
     overflow: auto;
@@ -1013,9 +1027,6 @@
   .break-all {
     word-break: break-all;
   }
-  .overflow-ellipsis {
-    text-overflow: ellipsis;
-  }
   .text-white {
     color: var(--color-white);
   }
@@ -1192,11 +1203,11 @@ button {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-#file-label {
+#file-label1, #file-label2, #file-label {
   color: black;
   padding: 8px;
 }
-#file {
+#file1, #file2, #file {
   position: absolute;
   visibility: hidden;
 }

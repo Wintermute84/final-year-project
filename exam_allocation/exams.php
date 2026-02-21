@@ -7,10 +7,12 @@ if (!isset($_SESSION["uid"])) {
 $etype = isset($_GET['etype']) ? $_GET['etype'] : 'All';
 $result = getExams($conn, $etype);
 if (isset($_POST['exam-upload'])) {
-  if (isset($_FILES['time-table-upload-file'])) {
+  if (!empty($_FILES['time-table-upload-file']['tmp_name'])) {
     $filename = $_FILES['time-table-upload-file']['tmp_name'];
-    $a = addExamDefinition($conn, $filename);
+  } elseif (!empty($_FILES['appearing-list-upload-file']['tmp_name'])) {
+    $filename = $_FILES['appearing-list-upload-file']['tmp_name'];
   }
+  $a = addExamDefinition($conn, $filename);
   header("Location: exams.php");
   exit;
 }
@@ -84,7 +86,12 @@ if (isset($_GET['delete_id'])) {
             $eid = $_GET['eid'];
             $timeTableData = getExamTimeTableData($conn, $eid);
           } ?>
-          <?php if (isset($timeTableData) and $timeTableData->num_rows > 0): ?>
+          <?php
+          if (isset($_GET['eid']) && isset($_GET['ename']) && $_GET['examtype'] == '2') {
+            $eid = $_GET['eid'];
+            $appearingListData = getAppearingListData($conn, $eid);
+          } ?>
+          <?php if (isset($timeTableData) and isset($_GET['examtype']) and $_GET['examtype'] == '1' and $timeTableData->num_rows > 0): ?>
             <table border="1" class="m-auto w-[99%]">
               <tr>
                 <th>Exam Date</th>
@@ -100,6 +107,26 @@ if (isset($_GET['delete_id'])) {
                   <td><?= $row["ccode"] ?></td>
                   <td><?= $row["sem"] ?></td>
                   <td><?= $row["branch"] ?></td>
+                </tr>
+              <?php endwhile; ?>
+            </table>
+          <?php endif; ?>
+          <?php if (isset($appearingListData) and isset($_GET['examtype']) and $_GET['examtype'] == '2' and $appearingListData->num_rows > 0): ?>
+            <table border="1" class="m-auto w-[99%]">
+              <tr>
+                <th>Reg No</th>
+                <th>Branch</th>
+                <th>Course Code</th>
+                <th>Exam Date</th>
+                <th>Session</th>
+              </tr>
+              <?php while ($row = $appearingListData->fetch_assoc()): ?>
+                <tr>
+                  <td><?= $row["student"] ?></td>
+                  <td><?= $row["branch"] ?></td>
+                  <td><?= $row["ccode"] ?></td>
+                  <td><?= $row["edate"] ?></td>
+                  <td><?= $row["session"] ?></td>
                 </tr>
               <?php endwhile; ?>
             </table>
@@ -135,9 +162,9 @@ if (isset($_GET['delete_id'])) {
         <div class="flex flex-col w-full items-end mt-10 gap-2 overflow-auto h-[400px]">
           <?php if ($result->num_rows > 0): ?>
             <?php while ($row = $result->fetch_assoc()): ?>
-              <div class="<?= (isset($_GET['eid']) && ($_GET['eid'] == $row['eid'])) ? "active" : "bg-[#151515]" ?> py-4 px-2 w-fit min-h-[110px] max-h-[120px] cursor-pointer  mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out">
-                <a href="exams.php?eid=<?= $row['eid'] ?>&ename=<?= $row['ename'] ?>" class="w-fit flex flex-col ml-2">
-                  <p class="text-md overflow-ellipsis text-nowrap">Exam Name - <?= $row['ename'] ?></p>
+              <div class="<?= (isset($_GET['eid']) && ($_GET['eid'] == $row['eid'])) ? "active" : "bg-[#151515]" ?> py-4 px-2 w-[98%] min-h-[110px] max-h-[120px] cursor-pointer  mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out">
+                <a href="exams.php?eid=<?= $row['eid'] ?>&ename=<?= $row['ename'] ?>&examtype=<?= $row['etype'] ?>" class="w-[100%] flex flex-col ml-2">
+                  <p class="text-md truncate text-">Exam Name - <?= $row['ename'] ?></p>
                   <p class="text-md">Exam Type - <?= $row['etype'] == "1" ? "Internal Exam" : "University Exam" ?></p>
                   <p class="text-md">Start Date - <?= $row['sdate'] ?></p>
                   <p class="text-md">End Date - <?= $row['edate'] ?></p>
@@ -184,19 +211,56 @@ if (isset($_GET['delete_id'])) {
           End Date
           <input type="date" name="endDateInput" id="endDateInput" class="px-3 border-2 border-[#605F5F] bg-[#323232] h-10 rounded-[8px] w-[400px]">
         </label>
-        <div class="flex flex-col  gap-2">
+        <div class="flex-col gap-2 exam-time-table-upload-container hidden">
           <p>Exam Time Table Upload</p>
           <div class="flex gap-2 items-center justify-start">
-            <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label" for="file">Choose File</label>
-            <input type="file" id="file" name="time-table-upload-file" accept=".csv" required>
+            <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label1" for="file1">Choose File</label>
+            <input type="file" id="file1" name="time-table-upload-file" class="time-table-upload-input" accept=".csv">
           </div>
         </div>
+        <div class="flex-col gap-2 appearing-list-upload-container hidden">
+          <p>Appearing List Upload</p>
+          <div class="flex gap-2 items-center justify-start">
+            <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label2" for="file2">Choose File</label>
+            <input type="file" id="file2" class="appearing-list-upload-input" name="appearing-list-upload-file" accept=".csv">
+          </div>
+        </div>
+
         <button type="submit" name="exam-upload" class="upload-button bg-white border rounded-[3px] w-[112px] h-[50px] mx-auto mt-12">Submit</button>
       </form>
     </div>
   </div>
   <button @click="on=true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer absolute bottom-8 right-3"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
   <script type="module" src="./scripts/app.js"></script>
+  <script>
+    const examType = document.getElementById("examTypeInput");
+
+    const timetableDiv = document.querySelector(".exam-time-table-upload-container");
+    const appearingDiv = document.querySelector(".appearing-list-upload-container");
+
+    const timetableInput = document.querySelector(".time-table-upload-input");
+    const appearingInput = document.querySelector(".appearing-list-upload-input");
+
+    function updateUploadField() {
+      if (examType.value === "1") {
+        timetableDiv.style.display = "flex";
+        appearingDiv.style.display = "none";
+
+        timetableInput.required = true;
+        appearingInput.required = false;
+      } else {
+        timetableDiv.style.display = "none";
+        appearingDiv.style.display = "flex";
+
+        timetableInput.required = false;
+        appearingInput.required = true;
+      }
+    }
+
+    examType.addEventListener("change", updateUploadField);
+    updateUploadField();
+  </script>
+
 </body>
 
 </html>

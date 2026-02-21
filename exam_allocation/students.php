@@ -101,6 +101,7 @@ if (isset($_GET['semesterId']) && isset($_GET['branchId'])) {
                 <th>Elective 1</th>
                 <th>Elective 2</th>
                 <th>Elective 3</th>
+                <th>Minor</th>
               </tr>
               <?php while ($row = $studData->fetch_assoc()): ?>
                 <tr>
@@ -110,6 +111,7 @@ if (isset($_GET['semesterId']) && isset($_GET['branchId'])) {
                   <td><?= $row["elective_1"] ?></td>
                   <td><?= $row["elective_2"] ?></td>
                   <td><?= $row["elective_3"] ?></td>
+                  <td><?= $row["minor"] ?></td>
                 </tr>
               <?php endwhile; ?>
             </table>

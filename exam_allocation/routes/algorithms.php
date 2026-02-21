@@ -55,11 +55,13 @@ function getElectiveStudentData($conn, $electiveSubs, $orderfield)
         WHEN s.elective_1 IN ($branches) THEN s.elective_1
         WHEN s.elective_2 IN ($branches) THEN s.elective_2
         WHEN s.elective_3 IN ($branches) THEN s.elective_3
+        WHEN s.minor IN ($branches) THEN s.minor
     END AS COURSE
 FROM students s
 WHERE (s.elective_1 IN ($branches)
    OR s.elective_2 IN ($branches)
-   OR s.elective_3 IN ($branches))
+   OR s.elective_3 IN ($branches)
+   OR s.minor IN ($branches))
 AND s.branch in ($orderfield)
 ORDER BY COURSE, s.branch, s.rollno;");
   $stmt->execute();
@@ -84,7 +86,7 @@ function getStudData($conn, $semester, $orderfield, $edate, $session, $eid)
     return iterator_to_array($stmt->get_result());
   }
   $orderfield = implode(",", array_map(fn($b) => "'" . $conn->real_escape_string($b) . "'", $orderfield));
-  $stmt = $conn->prepare("SELECT s.rollno, s.reg_no, c.ccode as COURSE 
+  $stmt = $conn->prepare("SELECT distinct s.rollno, s.reg_no, s.branch, c.ccode as COURSE 
   FROM students s 
   JOIN exam_time_table ett ON s.branch = ett.branch 
   AND s.semester = ett.sem 
@@ -124,7 +126,6 @@ function algoOne($conn, $semester, $orderfield1, $orderfield2, $rooms, $edate, $
     $grp1 = getStudData($conn, $semester, $orderfield1, $edate, $session, $eid);
     $grp2 = getStudData($conn, $semester, $orderfield2, $edate, $session, $eid);
   }
-
 
   $x = count($grp1);
   $y = count($grp2);
@@ -615,4 +616,127 @@ function algoFour($conn, $semester1, $semester2, $semester3, $semester4, $orderf
 
   $result = array_merge($drawingAllocations, $finalAllocation);
   return $result;
+}
+
+
+function algoUniOne($conn, $shuffleOrder, $rooms, $edate, $session, $eid)
+{
+  $grp = getUniStudData($conn, $shuffleOrder, $edate, $session, $eid);
+  $x = count($grp);
+  $y = 0;
+  $z = abs($x - $y);
+
+  if ($z % 2 == 0) {
+    $p =  $z / 2;
+  } else {
+    $p = ($z + 1) / 2;
+  }
+
+  $side_A = array_slice($grp, 0, count($grp) - $p);
+  $side_B = array_slice($grp, count($grp) - $p);
+
+  $x = count($side_A);
+  $y = count($side_B);
+
+  $drawingRoomData = [];
+
+  $g = getDrawingRoomData($conn, $rooms);
+  while ($row = $g->fetch_assoc()) {
+    $drawingRoomData[] = $row;
+  }
+
+  $aIndex = 0;
+  $bIndex = 0;
+  $finalAllocation = [];
+  foreach ($drawingRoomData as $room) {
+
+    $roomName = $room['Room_no'];
+
+    for ($i = 0; $i < 30 && $aIndex < $x; $i++) {  //drawing rooms are capped at 60 capacity. 30 for Side A and 30 for B
+      $finalAllocation[] = [
+        'reg_no' => $side_A[$aIndex]['reg_no'],
+        'room'   => $roomName,
+        'seat'   => 'A' . ($i + 1),
+        'edate'  => $edate,
+        'session' => $session,
+        'elective' => $side_A[$aIndex]['COURSE'] ?? null
+      ];
+      $aIndex++;
+    }
+
+    for ($i = 0; $i < 30 && $bIndex < $y; $i++) {  //drawing rooms are capped at 60 capacity. 30 for Side A and 30 for B
+      $finalAllocation[] = [
+        'reg_no' => $side_B[$bIndex]['reg_no'],
+        'room'   => $roomName,
+        'seat'   => 'B' . ($i + 1),
+        'edate'  => $edate,
+        'session' => $session,
+        'elective' => $side_B[$bIndex]['COURSE'] ?? null
+      ];
+      $bIndex++;
+    }
+  }
+
+  $roomData = [];
+  $normalRoomData = getNormalRoomData($conn, $rooms);
+  while ($row = $normalRoomData->fetch_assoc()) {
+    $roomData[] = $row;
+  }
+
+
+
+  foreach ($roomData as $room) {
+
+    $roomName = $room['Room_no'];
+
+    for ($i = 1; $i <= 15 && $aIndex < count($side_A); $i++) {
+      $finalAllocation[] = [
+        'reg_no' => $side_A[$aIndex]['reg_no'],
+        'room'   => $roomName,
+        'seat'   => 'A' . $i,
+        'edate'  => $edate,
+        'session' => $session,
+        'elective' => $side_A[$aIndex]['COURSE'] ?? null
+      ];
+      $aIndex++;
+    }
+
+    for ($i = 1; $i <= 15 && $bIndex < count($side_B); $i++) {
+      $finalAllocation[] = [
+        'reg_no' => $side_B[$bIndex]['reg_no'],
+        'room'   => $roomName,
+        'seat'   => 'B' . $i,
+        'edate'  => $edate,
+        'session' => $session,
+        'elective' => $side_B[$bIndex]['COURSE'] ?? null
+      ];
+      $bIndex++;
+    }
+  }
+
+  $result = $finalAllocation;
+  return $result;
+}
+
+function getUniStudData($conn, $orderfield, $edate, $session, $eid)
+{
+  if (empty($orderfield)) {
+    $sql = "SELECT * FROM appearing_list WHERE 1 = 0";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+    return iterator_to_array($stmt->get_result());
+  }
+  $orderfield = implode(",", array_map(fn($b) => "'" . $conn->real_escape_string($b) . "'", $orderfield));
+  $stmt = $conn->prepare("SELECT s.student as reg_no, s.ccode as COURSE 
+  FROM appearing_list s 
+  WHERE s.branch IN ($orderfield)  
+  AND s.edate = ? 
+  AND s.session = ?
+  AND s.eid = ? 
+  ORDER BY s.ccode, FIELD(s.branch, $orderfield), s.student;
+  ");
+  $stmt->bind_param("ssi", $edate, $session, $eid);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  return iterator_to_array($result);
 }

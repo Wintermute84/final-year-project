@@ -74,17 +74,19 @@ function importStudentsFromCSV($conn, $fileTmpName)
             $el1 = $data[5] ?? null;
             $el2 = $data[6] ?? null;
             $el3 = $data[7] ?? null;
+            $minor = $data[8] ?? null;
 
             $stmt = $conn->prepare(
-                "INSERT INTO students (reg_no, rollno, name, branch, semester, elective_1, elective_2, elective_3) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                "INSERT INTO students (reg_no, rollno, name, branch, semester, elective_1, elective_2, elective_3, minor) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON DUPLICATE KEY UPDATE 
                     elective_1 = VALUES(elective_1),
                     elective_2 = VALUES(elective_2),
-                    elective_3 = VALUES(elective_3)
+                    elective_3 = VALUES(elective_3),
+                    minor = VALUES(minor)
                 "
             );
-            $stmt->bind_param("sississs", $regno, $rollno, $name, $branch, $semester, $el1, $el2, $el3);
+            $stmt->bind_param("sississss", $regno, $rollno, $name, $branch, $semester, $el1, $el2, $el3, $minor);
             $stmt->execute();
         }
 
@@ -143,25 +145,42 @@ function addExamDefinition($conn, $filename)
     $stmt->bind_param("siss", $examName, $examType, $startDate, $endDate);
     $stmt->execute();
     $last_id = $conn->insert_id;
-    if ($_FILES['time-table-upload-file']['size'] > 0) {
+    if ($_FILES['time-table-upload-file']['size'] > 0 || $_FILES['appearing-list-upload-file']['size'] > 0) {
         $file = fopen($filename, "r");
 
         fgetcsv($file);
+        if ($examType == 1) {
+            while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+                $edate = $data[0];
+                $sess = $data[1];
+                $ccode = $data[2];
+                $sem = $data[3];
+                $branch = $data[4];
 
-        while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
-            $edate = $data[0];
-            $sess = $data[1];
-            $ccode = $data[2];
-            $sem = $data[3];
-            $branch = $data[4];
+                $stmts = $conn->prepare(
+                    "INSERT INTO exam_time_table(eid,edate,session,ccode,sem,branch) 
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            "
+                );
+                $stmts->bind_param("isssis", $last_id, $edate, $sess, $ccode, $sem, $branch);
+                $stmts->execute();
+            }
+        } elseif ($examType == 2) {
+            while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+                $studId = $data[0];
+                $branch = $data[1];
+                $ccode = $data[2];
+                $edate = $data[3];
+                $sess = $data[4];
 
-            $stmts = $conn->prepare(
-                "INSERT INTO exam_time_table(eid,edate,session,ccode,sem,branch) 
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        "
-            );
-            $stmts->bind_param("isssis", $last_id, $edate, $sess, $ccode, $sem, $branch);
-            $stmts->execute();
+                $stmts = $conn->prepare(
+                    "INSERT INTO appearing_list(eid,student,branch,ccode,edate,session) 
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            "
+                );
+                $stmts->bind_param("isssss", $last_id, $studId, $branch, $ccode, $edate, $sess);
+                $stmts->execute();
+            }
         }
 
         fclose($file);
@@ -194,7 +213,7 @@ function importCoursesFromCSV($conn, $fileTmpName)
             $is_elective = $data[2];
             $sem = $data[3];
             $branch = $data[4];
-
+            echo $ccode . $cname;
             $stmt = $conn->prepare(
                 "INSERT INTO courses (ccode, cname, sem, branch, is_elective) 
                  VALUES (?, ?, ?, ?, ?)"
@@ -291,7 +310,7 @@ function getSeatingAllocations($conn)
 
 function getSeatingExamData($conn, $aid)
 {
-    $stmt = $conn->prepare("SELECT distinct sad.edate, sad.session, e.ename FROM seating_allocation_data sad JOIN seating_allocation_definition saad ON sad.aid=saad.aid JOIN exam_definition e ON saad.eid=e.eid where sad.aid = ?");
+    $stmt = $conn->prepare("SELECT distinct sad.edate, sad.session, e.ename,e.etype FROM seating_allocation_data sad JOIN seating_allocation_definition saad ON sad.aid=saad.aid JOIN exam_definition e ON saad.eid=e.eid where sad.aid = ?");
     $stmt->bind_param("i", $aid);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -319,4 +338,22 @@ function deleteSeatingData($conn, $id)
     $stmts->execute();
     $results = $stmt->get_result();
     return ($results && $result);
+}
+
+function getAppearingListData($conn, $eid)
+{
+    $stmt = $conn->prepare("Select * from appearing_list where eid = ?");
+    $stmt->bind_param("i", $eid);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result;
+}
+
+function getUniversityExamInfo($conn, $eid)
+{
+    $stmt = $conn->prepare("Select distinct edate, session from appearing_list where eid = ?");
+    $stmt->bind_param("i", $eid);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result;
 }

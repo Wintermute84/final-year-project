@@ -4,6 +4,8 @@ import {viewRooms}  from "./view_rooms.js"
 window.Alpine = Alpine
 Alpine.start()  
 
+
+
 document.querySelectorAll(".js-room-div").forEach(div => (
   div.addEventListener('click',()=>{
     const capacity = div.dataset.capacity;
@@ -25,6 +27,17 @@ function higlightDiv(dataObj,jsClass){
       }
     })
   }
+  else if(jsClass === ".js-room-blocks"){
+    document.querySelectorAll(jsClass).forEach(div => {
+      const id = div.dataset.roomId
+      if(id == dataObj.id){
+        div.classList.add("active")
+      }
+      else{
+        div.classList.remove("active")
+      }
+    })
+  }
 }
 
  
@@ -32,6 +45,7 @@ let rooms = []
 
 const exams = document.querySelectorAll(".js-exam-div")
 const hiddenInput = document.getElementById('selectedExamId');
+const examTypeInput = document.getElementById('selectedExamType');
 const roomsDiv = document.querySelectorAll(".js-room-select-div");
 let roomCapacity = 0
 
@@ -58,6 +72,7 @@ exams.forEach(exam => {
     exams.forEach(e => e.classList.remove('dinkey'));
     exam.classList.toggle("dinkey")
     hiddenInput.value = exam.dataset.eid;
+    examTypeInput.value = exam.dataset.etype;
   })
 })
 
@@ -322,6 +337,163 @@ function highlightSelectedDiv(selectedDate,selectedSession,jsClass){
   })
 }
 
+document.querySelectorAll('.js-uni-shuffle-div').forEach(div => {
+  div.addEventListener("click", () => {
+    groupMatching = {}
+    availableData = []
+    grid1 = []
+    document.querySelector(".js-shuffle-one-div").innerHTML = ""
+    oddBranch = null;
+    const { eid, edate: date, session: session } = div.dataset;
+    highlightSelectedDiv(date,session,".js-uni-shuffle-div");
+    slotkey = `S${eid}_${date}_${session}`
+    fetch("./routes/get_branches.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eid, date, session })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (!d.success) return;
+      const branches = d.branches || [];
+      branches.forEach(branch => {
+        availableData.push({branch:branch.branch,ccode:branch.ccode})
+      })
+      if(sessionStorage.getItem(slotkey)){
+        document.querySelector(`.${slotkey}`).classList.add('grouped')
+        const {grids} = JSON.parse(sessionStorage.getItem(slotkey))
+        availableData = []
+        grid1 = grids.grid1
+        renderMatchingUniDiv(grids.grid1,".js-shuffle-one-div",null)
+      }
+      displayAvailableUniBranches();
+    });
+    });
+  });
+
+  function displayAvailableUniBranches(){
+  let html = ``
+  availableData.forEach(data => {
+    html += getAvailableUniBranch(data.ccode, data.branch)
+  })
+  if(availableData.length === 0 && !sessionStorage.getItem(slotkey)){
+    sessionStorage.setItem(slotkey, JSON.stringify({grids:{grid1:grid1}}));
+    document.querySelector(`.${slotkey}`).classList.add('grouped')
+  }
+  else{
+    if(sessionStorage.getItem(slotkey) && availableData.length > 0){
+      sessionStorage.removeItem(slotkey)
+      document.querySelector(`.${slotkey}`).classList.remove('grouped')
+    }
+  }
+  document.querySelector(".available-branches-div").innerHTML = html;
+  addUniShiftListeners();
+}
+
+function getAvailableUniBranch(ccode, branch){
+  let html = `<div class="flex items-center justify-between w-full h-[50px] bg-[#191717] p-2 border border-2-white rounded-[4px]" data-ccode="${ccode}" data-branch="${branch}">
+                <div class="flex gap-2 items-center">
+                  <div class="w-[30px] h-[30px] text-[13px] rounded-full border border-dashed border-2-white flex justify-center items-center">
+                    U
+                  </div>
+                  <p>${branch} (${ccode})</p>
+                </div>
+                <button data-ccode="${ccode}" data-branch="${branch}" type="button" class="h-[30px] w-[30px] flex items-center justify-center border border-[#201d1d] rounded-[4px] bg-white js-add-to-shuffle-div">
+                  <img src="assets/arrow_forward.png" class="h-5" alt="arrow forward png">
+                </button>
+              </div>`
+  return html;
+}
+
+function addUniShiftListeners(){
+  document.querySelectorAll('.js-add-to-shuffle-div').forEach(button => {
+    button.addEventListener('click',()=>{
+      renderUniShuffleDivs(button.dataset.ccode,button.dataset.branch)  
+    })
+  })      
+}
+
+function renderUniShuffleDivs(ccode, branch){
+  availableData = availableData.filter(obj => !(obj.ccode == ccode && obj.branch === branch))
+  let data = []
+  let jsClass = ``
+  grid1.push({ccode:ccode,branch:branch})
+  data = grid1
+  jsClass = ".js-shuffle-one-div"
+
+  displayAvailableUniBranches();
+  renderMatchingUniDiv(data,jsClass)
+}
+
+function renderMatchingUniDiv(data,jsClass){
+  let html = ``
+  data.forEach(child => {
+    html += getUniShuffleBranch(child.ccode,child.branch)
+  })
+  document.querySelector(jsClass).innerHTML = html;
+  addUniUnshiftListeners(jsClass);
+}
+
+function getUniShuffleBranch(ccode, branch){
+  let html = `<div class="flex items-center justify-between w-full h-[50px] bg-[#191717] p-2 border border-2-white rounded-[4px]" data-ccode="${ccode}" data-branch="${branch}">
+              <div class="flex gap-2 items-center">
+                <div class="w-[30px] h-[30px] text-[13px] rounded-full border border-dashed border-2-white flex justify-center items-center">
+                  U
+                </div>
+                <p>${branch} (${ccode})</p>
+              </div>
+              <button data-ccode="${ccode}" data-branch="${branch}" type="button" class="h-[30px] w-[30px] flex items-center justify-center border border-[#201d1d] rounded-[4px] bg-white js-add-to-available-div">
+                <img src="assets/arrow_forward.png" class="h-5 rotate-180" alt="arrow forward png">
+              </button>
+            </div>`
+  return html;
+}
+
+function addUniUnshiftListeners(jsClass){
+  const container = document.querySelector(jsClass)
+  const child = [...container.querySelectorAll(".js-add-to-available-div")]
+  child.forEach(c => {
+    let ccode = c.dataset.ccode
+    let branch = c.dataset.branch
+    let data = []
+    c.addEventListener('click',()=>{
+      grid1 = grid1.filter(obj => !(obj.ccode == ccode && obj.branch === branch))
+      data = grid1
+      renderMatchingUniDiv(data,jsClass)
+      availableData.push({ccode:ccode,branch:branch})
+      displayAvailableUniBranches();
+    })
+  })
+}
+
+document.getElementById("uniProceedButton")?.addEventListener("click", () => {
+  const allSlots = [...document.querySelectorAll(".js-uni-shuffle-div")];
+  const allGrouped = allSlots.every(d => d.classList.contains("grouped"));
+  if (!allGrouped) return alert("Complete grouping for all slots first!");
+  else{
+    const payload = {};
+    allSlots.forEach(d => {
+      const { eid, edate: date, session } = d.dataset;
+      const key = `S${eid}_${date}_${session}`;
+      const saved = sessionStorage.getItem(key);
+      if (saved) payload[key] = JSON.parse(saved);
+    });
+    
+    fetch("./routes/allocation_engine.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seating_data: payload })
+    })
+    .then(r => r.json())
+    .then(d => {
+    if (d.success) window.location.href = "ding.php";
+    })
+    .catch(e => alert("Allocation send failed"));
+  };
+})
+
+
+
 document.querySelectorAll(".js-shuffle-div").forEach(div => {
   div.addEventListener("click", () => {
     groupMatching = {}
@@ -405,7 +577,6 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
       if(sessionStorage.getItem(slotkey)){
         document.querySelector(`.${slotkey}`).classList.add('grouped')
         const {no_sems,grids} = JSON.parse(sessionStorage.getItem(slotkey))
-        console.log(grids)
         availableData = []
         grid1 = grids.grid1
         grid2 = grids.grid2
@@ -630,12 +801,10 @@ function getShuffleBranch(sem, branch, special){
 }
 
 document.getElementById("proceeddBtn")?.addEventListener("click", () => {
-  console.log()
   const allSlots = [...document.querySelectorAll(".js-shuffle-div")];
   const allGrouped = allSlots.every(d => d.classList.contains("grouped"));
   if (!allGrouped) return alert("Complete grouping for all slots first!");
   else{
-    console.log("done")
     const payload = {};
     allSlots.forEach(d => {
       const { eid, edate: date, session } = d.dataset;
@@ -657,7 +826,7 @@ document.getElementById("proceeddBtn")?.addEventListener("click", () => {
   };
 })
 
-const reapplyEventListener = (ename) => document.querySelectorAll('.js-room-blocks').forEach(button => {
+const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-room-blocks').forEach(button => {
   button.addEventListener('click',()=>{
     const edate = button.dataset.edate;
     const session = button.dataset.session;
@@ -665,10 +834,11 @@ const reapplyEventListener = (ename) => document.querySelectorAll('.js-room-bloc
     const roomId = button.dataset.roomId;
     const examName = ename;
     const roomType = button.dataset.roomType;
+    higlightDiv({id:roomId},'.js-room-blocks')
      fetch("./routes/getSeatedStudentData.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ edate:edate,session:session,aid:aid,roomId:roomId })
+    body: JSON.stringify({ edate:edate,session:session,aid:aid,roomId:roomId,etype:etype })
     })
     .then(r => r.json())
     .then(d => {
@@ -699,13 +869,14 @@ const reapplyEventListener = (ename) => document.querySelectorAll('.js-room-bloc
             <th>Roll No</th>
             <th>Seat</th>
           </tr>`
-      let arr1 = students.slice(0, Math.floor(students.length / 2));
-      let arr2 = students.slice(Math.floor(students.length / 2));
-      localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:arr1,bSlots:arr2}))
-      arr1.forEach(student => {
+    let md = Math.ceil(students.length / 2);
+    let aSlot = etype == 2 ? students.filter(student => student['seat'][0] === 'A') : students.slice(0,md)
+    let bSlot = etype == 2 ? students.filter(student => student['seat'][0] === 'B') : students.slice(md)
+    localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:aSlot,bSlots:bSlot,etype:etype}))
+      aSlot.forEach(student => {
         html += `<tr>
-            <td align="center">S${student.semester}  ${student.branch}</td>
-            <td align="center">${student.rollno}</td>
+            <td align="center"> ${etype == 1 ? `S${student.semester}` : ""}  ${student.branch}</td>
+            <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
             <td align="center">${student.seat}</td>
           </tr>`
       })
@@ -716,10 +887,10 @@ const reapplyEventListener = (ename) => document.querySelectorAll('.js-room-bloc
             <th>Roll No</th>
             <th>Seat</th>
           </tr>`
-      arr2.forEach(student => {
+      bSlot.forEach(student => {
       html += `<tr>
-            <td align="center">S${student.semester}  ${student.branch}</td>
-            <td align="center">${student.rollno}</td>
+            <td align="center">${etype == 1 ? `S${student.semester}` : ""}  ${student.branch}</td>
+            <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
             <td align="center">${student.seat}</td>
           </tr>`
     })
@@ -754,11 +925,11 @@ const reapplyEventListener = (ename) => document.querySelectorAll('.js-room-bloc
           </tr>`
     let aSlot = students.filter(student => student['seat'][0] === 'A')
     let bSlot = students.filter(student => student['seat'][0] === 'B')
-    localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:aSlot,bSlots:bSlot}))
+    localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:aSlot,bSlots:bSlot,etype:etype}))
     aSlot.forEach(student => {
       html += `<tr>
-            <td align="center">S${student.semester}  ${student.branch}</td>
-            <td align="center">${student.rollno}</td>
+            <td align="center">${etype == 1 ? `S${student.semester}` : ""}  ${student.branch}</td>
+            <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
             <td align="center">${student.seat}</td>
           </tr>`
     })
@@ -772,8 +943,8 @@ const reapplyEventListener = (ename) => document.querySelectorAll('.js-room-bloc
         `;
     bSlot.forEach(student => {
       html += `<tr>
-            <td align="center">S${student.semester}  ${student.branch}</td>
-            <td align="center">${student.rollno}</td>
+            <td align="center">${etype == 1 ? `S${student.semester}` : ""}  ${student.branch}</td>
+            <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
             <td align="center">${student.seat}</td>
           </tr>`
     })
@@ -792,7 +963,9 @@ document.querySelectorAll('.js-seating-blocks').forEach(button => {
     const session = button.dataset.session;
     const aid = button.dataset.aid;
     const ename = button.dataset.ename;
-    generateReports(edate,session,aid,ename);
+    const etype = button.dataset.etype;
+    highlightSelectedDiv(edate,session,'.js-seating-blocks')
+    generateReports(edate,session,aid,ename,etype);
   })
 })
 
@@ -817,8 +990,56 @@ function formatRanges(nums) {
   return result.join(", ");
 }
 
-async function generateReports(edate,session,aid,ename){
-  localStorage.setItem('downloadReport',JSON.stringify({ edate: edate, session:session, aid:aid, ename:ename }))
+function formatReg(regNos){
+  if (!regNos.length) return "";
+
+    regNos.sort();
+
+    const groups = {};
+
+    regNos.forEach(r => {
+        const prefix = r.slice(0, -3);
+        const num = parseInt(r.slice(-3), 10);
+
+        if (!groups[prefix]) groups[prefix] = [];
+        groups[prefix].push(num);
+    });
+
+    let result = [];
+
+    Object.keys(groups).forEach(prefix => {
+
+        let nums = groups[prefix].sort((a,b)=>a-b);
+
+        let start = nums[0];
+        let prev = nums[0];
+
+        for (let i = 1; i <= nums.length; i++) {
+
+            if (nums[i] !== prev + 1) {
+
+                if (start === prev) {
+                    result.push(prefix + String(start).padStart(3,'0'));
+                } else {
+                    result.push(
+                        prefix + String(start).padStart(3,'0') +
+                        "-" +
+                        prefix + String(prev).padStart(3,'0')
+                    );
+                }
+
+                start = nums[i];
+            }
+
+            prev = nums[i];
+        }
+    });
+
+    return result.join(", ");
+}
+
+async function generateReports(edate,session,aid,ename,etype){
+  localStorage.setItem('downloadReport',JSON.stringify({ edate: edate, session:session, aid:aid, ename:ename, etype:etype }))
   const res1 = await fetch("./routes/getSeatingRoomData.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -828,7 +1049,7 @@ async function generateReports(edate,session,aid,ename){
   let data1 = d1.roomData;
   let html = ``;
   Object.entries(data1).forEach(([rid, roomInfo]) => {
-    html += `<div data-edate=${roomInfo.edate} data-session=${roomInfo.session} data-aid=${roomInfo.aid} data-room-id=${roomInfo.room} data-room-type=${roomInfo.type} class="w-[95%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-blocks">
+    html += `<div data-edate=${roomInfo.edate} data-session=${roomInfo.session} data-aid=${roomInfo.aid} data-room-id=${roomInfo.room} data-room-type=${roomInfo.type} data-etype=${etype} class="w-[95%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-room-blocks">
                   <div class="w-fit flex flex-col ml-2">
                     <p class="text-sm">No - ${roomInfo.room}</p>
                     <p class="text-sm">Capacity - ${roomInfo.capacity}</p>
@@ -838,17 +1059,18 @@ async function generateReports(edate,session,aid,ename){
   });
   document.querySelector('.js-seated-rooms-div').innerHTML = html;
   document.querySelector('.js-seating-data-container').innerHTML = ''; 
-  reapplyEventListener(ename);
+  reapplyEventListener(ename,etype);
   const res2 = await fetch("./routes/getReports.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ edate, session, aid })
+      body: JSON.stringify({ edate, session, aid, etype })
     });
 
   const d2 = await res2.json();
   let data2 = d2.reportData;
   let table = ``;
-  Object.entries(data2).forEach(([rid, roomInfo]) => {
+  if(etype == 1){
+    Object.entries(data2).forEach(([rid, roomInfo]) => {
     table += `<table class="w-[50%] h-fit report pdf-page m-4">
     <tr>
       <th colspan="4">Muthoot Institute of Technology and Science (Autonomous)</th>
@@ -887,7 +1109,6 @@ async function generateReports(edate,session,aid,ename){
   `;
 
   Object.entries(rinfo).forEach(([room, roomData]) => {
-
     const groupedByCourse = roomData.reduce((acc, [roll, course]) => {
       if (!acc[course]) acc[course] = [];
       acc[course].push(roll);
@@ -898,7 +1119,7 @@ async function generateReports(edate,session,aid,ename){
       table += `
         <tr>
           <td>${room}</td>
-          <td>${course}: ${formatRanges(rolls)}</td>
+          <td>${course}: ${etype == 1 ? formatRanges(rolls) : formatReg(rolls)}</td>
           <td>${rolls.length}</td>
         </tr>
       `;
@@ -908,12 +1129,73 @@ async function generateReports(edate,session,aid,ename){
 
 });
 
-      table+=`</tr>`
-     })
-      table+=` </table>`
-         document.querySelector('.js-hall-reports-div').innerHTML = table; 
+      table+=`</tr></table>`
+     })}
+  else if(etype == 2){
+    table += `<table class="w-[50%] h-fit report pdf-page m-4">
+    <tr>
+      <th colspan="4">Muthoot Institute of Technology and Science (Autonomous)</th>
+    </tr>
+    <tr>
+      <th colspan="4">${ename}</th>
+    </tr>
+    <tr>
+      <th colspan="4">Hall Allotment Plan</th>
+    </tr>
+    <tr>
+      <th colspan="4">Date of Exam: ${edate} <span class="mx-4"></span> Session: ${session}</th>
+    </tr>
+    <tr>
+      <th>Branch</th>
+      <th>Hall</th>
+      <th>Roll No</th>
+      <th>Total no of students</th>
+    </tr>
+    `
+  Object.entries(data2).forEach(([branch, rinfo]) => {
 
-    }
+  const branchRowCount = Object.values(rinfo).reduce(
+    (sum, roomData) => {
+      const courseCount = new Set(roomData.map(([_, course]) => course)).size;
+      return sum + courseCount;
+    },
+    0
+  );
+
+  table += `
+    <tr>
+      <th rowspan="${branchRowCount + 1}">${branch}</th>
+    </tr>
+  `;
+
+  Object.entries(rinfo).forEach(([room, roomData]) => {
+    const groupedByCourse = roomData.reduce((acc, [roll, course]) => {
+      if (!acc[course]) acc[course] = [];
+      acc[course].push(roll);
+      return acc;
+    }, {});
+
+    Object.entries(groupedByCourse).forEach(([course, rolls]) => {
+      table += `
+        <tr>
+          <td>${room}</td>
+          <td>${course}: ${etype == 1 ? formatRanges(rolls) : formatReg(rolls)}</td>
+          <td>${rolls.length}</td>
+        </tr>
+      `;
+    });
+
+  });
+
+});
+
+  table+=`</table>`
+
+     }
+        document.querySelector('.js-hall-reports-div').innerHTML = table; 
+
+  }
+
 
 
 document.getElementById('download-hall-reports').addEventListener('click',()=>{
@@ -922,7 +1204,7 @@ document.getElementById('download-hall-reports').addEventListener('click',()=>{
 
 
 function downloadPDF() {
-  const {edate,aid,session,ename} = JSON.parse(localStorage.getItem('downloadReport'))
+  const {edate,aid,session,ename,etype} = JSON.parse(localStorage.getItem('downloadReport'))
   fetch("./routes/generatePDFs.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -930,7 +1212,8 @@ function downloadPDF() {
       edate: edate,
       session: session,
       aid: aid,
-      ename:ename
+      ename:ename,
+      etype:etype
     })
   })
   .then(res => res.blob())
@@ -948,7 +1231,7 @@ function downloadPDF() {
 }
 
 document.querySelector('.js-download-room-report').addEventListener('click',()=>{
-  const {edate,session,aid,roomId,examName,roomType,aSlots,bSlots} = JSON.parse(localStorage.getItem('roomReport'))
+  const {edate,session,aid,roomId,examName,roomType,aSlots,bSlots,etype} = JSON.parse(localStorage.getItem('roomReport'))
   fetch("./routes/generateStudPdfs.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -960,7 +1243,8 @@ document.querySelector('.js-download-room-report').addEventListener('click',()=>
       roomId:roomId,
       roomType:roomType,
       aSlots:aSlots,
-      bSlots:bSlots
+      bSlots:bSlots,
+      etype:etype
     })
   })
   .then(res => res.blob())
@@ -977,3 +1261,4 @@ document.querySelector('.js-download-room-report').addEventListener('click',()=>
   .catch(err => alert("PDF generation failed"));
 
 })
+

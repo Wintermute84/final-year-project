@@ -42,7 +42,7 @@ if (isset($_POST['upload'])) {
     <div class="flex items-center justify-between w-full">
       <div class="w-[25px] h-[25px] bg-[#9E9B9B] border-3 rounded-sm border-[#FFFEFE] ml-3"></div>
       <div x-data="{ open: false }" class="relative inline-block">
-        <div @click="open = !open" class="cursor-pointer w-[25px] h-[25px] bg-gradient-to-b from-[#18C088] via-[#10855E] via-70% via-[#0D6D4D] to-[#0B5A40] rounded-xl border-2 border-[#828282] mr-3"></div>
+        <div @click="open = !open" class="cursor-pointer w-[25px] h-[25px] bg-gradient-to-b from-[#18C088]  via-70% via-[#0D6D4D] to-[#0B5A40] rounded-xl border-2 border-[#828282] mr-3"></div>
         <div x-show="open"
           @click.outside="open = false"
           x-transition:enter="transition ease-out duration-200"

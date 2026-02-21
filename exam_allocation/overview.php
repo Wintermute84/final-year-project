@@ -107,7 +107,7 @@ if (isset($_GET['deleteId'])) {
                   <?php while ($row = $examData->fetch_assoc()): ?>
                     <div
                       class="py-4 min-w-[95%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-start hover:opacity-80 transition-all ease-in-out js-seating-blocks"
-                      data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $_GET['aid'] ?>" data-ename="<?= htmlspecialchars($row['ename'], ENT_QUOTES) ?>">
+                      data-edate="<?= $row['edate'] ?>" data-etype="<?= $row['etype'] ?>" data-session="<?= $row['session'] ?>" data-aid="<?= $_GET['aid'] ?>" data-ename="<?= htmlspecialchars($row['ename'], ENT_QUOTES) ?>">
                       <div class="w-fit flex flex-col ml-2">
                         <p class="text-md select-none">Exam Date - <?= $row['edate'] ?></p>
                         <p class="text-md select-none">Session - <?= $row['session'] ?></p>
@@ -158,7 +158,6 @@ if (isset($_GET['deleteId'])) {
       </div>
     </div>
   </main>
-  <script src="./scripts/html2pdf.bundle.min.js"></script>
   <script type="module" src="./scripts/app.js"></script>
 </body>
 

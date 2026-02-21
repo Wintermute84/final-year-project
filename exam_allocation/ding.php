@@ -5,121 +5,148 @@ use function PHPSTORM_META\type;
 include 'config/db_connect.php';
 include 'config/functions.php';
 include 'routes/algorithms.php';
-
-if (isset($_SESSION['seating_data'])) {
+$examType = $_SESSION['examType'] ?? null;
+if (isset($_SESSION['seating_data']) and isset($examType)) {
   $seatingData = $_SESSION['seating_data'];
   $eid = $_SESSION['eid'];
   $rooms = $_SESSION['rooms'];
   $rooms = implode(", ", $rooms);
-  $res = getExamInfo($conn, $eid);
+  $res = null;
+  if ($examType == 1) {
+    $res = getExamInfo($conn, $eid);
+  } elseif ($examType == 2) {
+    $res = getUniversityExamInfo($conn, $eid);
+  } else {
+    die("Allocation Failed! Unknown Exam Type");
+    exit;
+  }
   $seatingResult = [];
-  while ($row = $res->fetch_assoc()) {
-    $edate = $row['edate'];
-    $session = $row['session'];
-    $edata = $seatingData['S' . $eid . '_' . $row['edate'] . '_' . $row['session']];
-    if ($edata['no_sems'] === 1) {
-      $sem =  $edata['groups'][0][0];
+  if ($examType == 1) {
+    while ($row = $res->fetch_assoc()) {
+      $edate = $row['edate'];
+      $session = $row['session'];
+      $edata = $seatingData['S' . $eid . '_' . $row['edate'] . '_' . $row['session']];
+      if ($edata['no_sems'] === 1) {
+        $sem =  $edata['groups'][0][0];
+        $grid1 = $edata['grids']['grid1'];
+        $branches = [];
+        foreach ($grid1 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder1 = $branches;
+
+        $grid2 = $edata['grids']['grid2'];
+        $branches = [];
+        foreach ($grid2 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder2 = $branches;
+        $results = algoOne($conn, $sem, $shuffleOrder1, $shuffleOrder2, $rooms, $edate, $session, $eid);
+        $seatingResult = array_merge($seatingResult, $results);
+      }
+      if ($edata['no_sems'] === 2) {
+        $sem1 =  $edata['groups'][0][0];
+        $sem2 =  $edata['groups'][0][1];
+        $grid1 = $edata['grids']['grid1'];
+        $branches = [];
+        foreach ($grid1 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder1 = $branches;
+
+        $grid2 = $edata['grids']['grid2'];
+        $branches = [];
+        foreach ($grid2 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder2 = $branches;
+        $results = algoTwo($conn, $sem1, $sem2, $shuffleOrder1, $shuffleOrder2, $rooms, $edate, $session, $eid);
+        $seatingResult = array_merge($seatingResult, $results);
+      }
+
+      if ($edata['no_sems'] === 3) {
+        $sem3 =  $edata['groups'][0][0];
+        $sem1 =  $edata['groups'][1][0];
+        $sem2 =  $edata['groups'][1][1];
+        $grid1 = $edata['grids']['grid1'];
+        $grid2 = $edata['grids']['grid2'];
+        $grid3 = $edata['grids']['grid3'];
+        $branches = [];
+        foreach ($grid1 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder1 = $branches;
+
+        $branches = [];
+        foreach ($grid2 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder2 = $branches;
+
+        $branches = [];
+        foreach ($grid3 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder3 = $branches;
+
+
+        $results = algoThree($conn, $sem1, $sem2, $sem3, $shuffleOrder1, $shuffleOrder2, $shuffleOrder3, $rooms, $edate, $session, $eid);
+        $seatingResult = array_merge($seatingResult, $results);
+      }
+
+      if ($edata['no_sems'] === 4) {
+        $sem1 =  $edata['groups'][0][0];
+        $sem2 =  $edata['groups'][0][1];
+        $sem3 =  $edata['groups'][1][0];
+        $sem4 =  $edata['groups'][1][1];
+        $grid1 = $edata['grids']['grid1'];
+        $grid2 = $edata['grids']['grid2'];
+        $grid3 = $edata['grids']['grid3'];
+        $grid4 = $edata['grids']['grid4'];
+        $branches = [];
+        foreach ($grid1 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder1 = $branches;
+
+        $branches = [];
+        foreach ($grid2 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder2 = $branches;
+
+        $branches = [];
+        foreach ($grid3 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder3 = $branches;
+
+        $branches = [];
+        foreach ($grid4 as $item) {
+          $branches[] = $item['branch'];
+        }
+        $shuffleOrder4 = $branches;
+        $results = algoFour($conn, $sem1, $sem2, $sem3, $sem4, $shuffleOrder1, $shuffleOrder2, $shuffleOrder3, $shuffleOrder4, $rooms, $edate, $session, $eid);
+        $seatingResult = array_merge($seatingResult, $results);
+      }
+    }
+  } elseif ($examType == 2) {
+    while ($row = $res->fetch_assoc()) {
+      $edate = $row['edate'];
+      $session = $row['session'];
+      $edata = $seatingData['S' . $eid . '_' . $row['edate'] . '_' . $row['session']];
       $grid1 = $edata['grids']['grid1'];
       $branches = [];
       foreach ($grid1 as $item) {
         $branches[] = $item['branch'];
       }
-      $shuffleOrder1 = $branches;
-
-      $grid2 = $edata['grids']['grid2'];
-      $branches = [];
-      foreach ($grid2 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder2 = $branches;
-      $results = algoOne($conn, $sem, $shuffleOrder1, $shuffleOrder2, $rooms, $edate, $session, $eid);
+      $shuffleOrder = $branches;
+      $results = algoUniOne($conn, $shuffleOrder, $rooms, $edate, $session, $eid);
       $seatingResult = array_merge($seatingResult, $results);
     }
-    if ($edata['no_sems'] === 2) {
-      $sem1 =  $edata['groups'][0][0];
-      $sem2 =  $edata['groups'][0][1];
-      $grid1 = $edata['grids']['grid1'];
-      $branches = [];
-      foreach ($grid1 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder1 = $branches;
-
-      $grid2 = $edata['grids']['grid2'];
-      $branches = [];
-      foreach ($grid2 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder2 = $branches;
-      $results = algoTwo($conn, $sem1, $sem2, $shuffleOrder1, $shuffleOrder2, $rooms, $edate, $session, $eid);
-      $seatingResult = array_merge($seatingResult, $results);
-    }
-
-    if ($edata['no_sems'] === 3) {
-      $sem3 =  $edata['groups'][0][0];
-      $sem1 =  $edata['groups'][1][0];
-      $sem2 =  $edata['groups'][1][1];
-      $grid1 = $edata['grids']['grid1'];
-      $grid2 = $edata['grids']['grid2'];
-      $grid3 = $edata['grids']['grid3'];
-      $branches = [];
-      foreach ($grid1 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder1 = $branches;
-
-      $branches = [];
-      foreach ($grid2 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder2 = $branches;
-
-      $branches = [];
-      foreach ($grid3 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder3 = $branches;
-
-
-      $results = algoThree($conn, $sem1, $sem2, $sem3, $shuffleOrder1, $shuffleOrder2, $shuffleOrder3, $rooms, $edate, $session, $eid);
-      $seatingResult = array_merge($seatingResult, $results);
-    }
-
-    if ($edata['no_sems'] === 4) {
-      $sem1 =  $edata['groups'][0][0];
-      $sem2 =  $edata['groups'][0][1];
-      $sem3 =  $edata['groups'][1][0];
-      $sem4 =  $edata['groups'][1][1];
-      $grid1 = $edata['grids']['grid1'];
-      $grid2 = $edata['grids']['grid2'];
-      $grid3 = $edata['grids']['grid3'];
-      $grid4 = $edata['grids']['grid4'];
-      $branches = [];
-      foreach ($grid1 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder1 = $branches;
-
-      $branches = [];
-      foreach ($grid2 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder2 = $branches;
-
-      $branches = [];
-      foreach ($grid3 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder3 = $branches;
-
-      $branches = [];
-      foreach ($grid4 as $item) {
-        $branches[] = $item['branch'];
-      }
-      $shuffleOrder4 = $branches;
-      $results = algoFour($conn, $sem1, $sem2, $sem3, $sem4, $shuffleOrder1, $shuffleOrder2, $shuffleOrder3, $shuffleOrder4, $rooms, $edate, $session, $eid);
-      $seatingResult = array_merge($seatingResult, $results);
-    }
+  } else {
+    die("Allocation Failed! Unknown Exam Type");
+    exit;
   }
   date_default_timezone_set('Asia/Kolkata');
   $currentDateTime = date("d-m-Y H:i:s");

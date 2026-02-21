@@ -7,8 +7,8 @@ $selectedRoom = $payload['rooms'] ?? [];
 $capacity     = $payload['roomCapacity'] ?? 0;
 $eid          = $_SESSION['eid'];
 $_SESSION['rooms'] = $selectedRoom;
-
-$stmt = $conn->prepare("
+if ($_SESSION['examType'] == 1) {
+  $stmt = $conn->prepare("
   SELECT 
     et.edate,
     et.session,
@@ -24,33 +24,37 @@ $stmt = $conn->prepare("
   LIMIT 1;
 ");
 
-$stmt->bind_param("i", $eid);
-$stmt->execute();
+  $stmt->bind_param("i", $eid);
+  $stmt->execute();
 
-$result = $stmt->get_result();
-$row    = $result->fetch_assoc();
+  $result = $stmt->get_result();
+  $row    = $result->fetch_assoc();
 
-$edate   = $row['edate'];
-$session = $row['session'];
-$students = $row['total_students'];
+  $edate   = $row['edate'];
+  $session = $row['session'];
+  $students = $row['total_students'];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $payload) {
+  if ($_SERVER['REQUEST_METHOD'] === 'POST' && $payload) {
 
-  if (empty($selectedRoom)) {
-    http_response_code(400);
-    echo json_encode(["error" => "Invalid input"]);
-    exit;
+    if (empty($selectedRoom)) {
+      http_response_code(400);
+      echo json_encode(["error" => "Invalid input"]);
+      exit;
+    }
+
+    if ($students > $capacity) {
+      http_response_code(400);
+      echo json_encode([
+        "error" => "Room capacity will not fit all students. Please ensure sufficient rooms are selected.",
+        "discrepancy" => "$edate $session"
+      ]);
+      exit;
+    }
   }
-
-  if ($students > $capacity) {
-    http_response_code(400);
-    echo json_encode([
-      "error" => "Room capacity will not fit all students. Please ensure sufficient rooms are selected.",
-      "discrepancy" => "$edate $session"
-    ]);
-    exit;
-  }
-
-  echo json_encode(["success" => true]);
+}
+echo json_encode(["success" => true]);
+if ($_SESSION['examType'] == 2) {
+  $_SESSION['step'] = 4;
+} else {
   $_SESSION['step'] = 3;
 }
