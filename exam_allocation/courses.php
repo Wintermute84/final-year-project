@@ -85,7 +85,7 @@ if (isset($_GET['deleteCourses'])) {
         <?php if (isset($_GET['semdetail']) && isset($_GET['branch'])): ?>
           <h3 class="m-2 text-md"><?= 'S' . $_GET['semdetail'] . " " . $_GET['branch'] ?></h3>
         <?php endif; ?>
-        <div class="w-[840px] h-[600px] overflow-auto mt-[20px]">
+        <div class="w-[55vw] h-[70vh] overflow-auto mt-[20px]">
           <?php
           if (isset($_GET['branchdetail']) && isset($_GET['semdetail'])) {
             $branch = $_GET['branchdetail'];
@@ -140,7 +140,7 @@ if (isset($_GET['deleteCourses'])) {
           </div>
         </div>
 
-        <div class="flex flex-col w-full items-end mt-10 gap-2 overflow-auto h-[400px]">
+        <div class="flex flex-col w-full items-end mt-10 gap-2 overflow-auto h-[50vh]">
           <?php if ($result->num_rows > 0): ?>
             <?php while ($row = $result->fetch_assoc()): ?>
               <a href="courses.php?semester=<?= $semester ?>&branch=<?= $row['branch'] ?>&semdetail=<?= $row['sem'] ?>&branchdetail=<?= $row['branch'] ?>" class="<?= (isset($_GET['branchdetail']) && ($_GET['branchdetail'] == $row['branch']) && (isset($_GET['semdetail']) && $_GET['semdetail'] == $row['sem'])) ? "active" : "" ?> w-[80%] min-h-[80px] max-h-[85px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out">

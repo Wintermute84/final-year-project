@@ -86,7 +86,7 @@ if (isset($_GET['semesterId']) && isset($_GET['branchId'])) {
         <?php if (isset($_GET['semdetail']) && isset($_GET['branch'])): ?>
           <h3 class="m-2 text-md"><?= 'S' . $_GET['semdetail'] . " " . $_GET['branch'] ?></h3>
         <?php endif; ?>
-        <div class="w-[840px] h-[600px] overflow-auto mt-[20px]">
+        <div class="w-[55vw] h-[70vh] overflow-auto mt-[20px]">
           <?php
           if (isset($_GET['branch']) && isset($_GET['semdetail'])) {
             $branch = $_GET['branch'];

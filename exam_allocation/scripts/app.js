@@ -844,7 +844,7 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
     .then(d => {
       let students = d.students;
       if(roomType == 'Drawing'){
-      let html = `<div class="w-[90%] flex flex-col border">
+      let html = `<div class="w-[90%] flex flex-col border" id="js-examhall-detailed-report">
     <table class="font-['sans-serif']">
       <tr>
         <th>Muthoot Institute of Technology and Science (Autonomous)</th>
@@ -898,7 +898,7 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
       document.querySelector('.js-seating-data-container').innerHTML = html;
     }
     else{
-      let html = `<div class="w-[90%] flex flex-col border">
+      let html = `<div class="w-[90%] flex flex-col border" id="js-examhall-detailed-report">
     <table class="font-['sans-serif']">
       <tr>
         <th>Muthoot Institute of Technology and Science (Autonomous)</th>
@@ -1071,22 +1071,23 @@ async function generateReports(edate,session,aid,ename,etype){
   let table = ``;
   if(etype == 1){
     Object.entries(data2).forEach(([rid, roomInfo]) => {
-    table += `<table class="w-[50%] h-fit report pdf-page m-4">
+    table += `<table class="w-[50%] h-fit report pdf-page m-4" id="js-report-table">
     <tr>
-      <th colspan="4">Muthoot Institute of Technology and Science (Autonomous)</th>
+      <th colspan="5">Muthoot Institute of Technology and Science (Autonomous)</th>
     </tr>
     <tr>
-      <th colspan="4">S${rid}, ${ename}</th>
+      <th colspan="5">S${rid}, ${ename}</th>
     </tr>
     <tr>
-      <th colspan="4">Hall Allotment Plan</th>
+      <th colspan="5">Hall Allotment Plan</th>
     </tr>
     <tr>
-      <th colspan="4">Date of Exam: ${edate} <span class="mx-4"></span> Session: ${session}</th>
+      <th colspan="5">Date of Exam: ${edate} <span class="mx-4"></span> Session: ${session}</th>
     </tr>
     <tr>
       <th>Branch</th>
       <th>Hall</th>
+      <th>Course</th>
       <th>Roll No.</th>
       <th>Total no of students</th>
     </tr>
@@ -1119,7 +1120,8 @@ async function generateReports(edate,session,aid,ename,etype){
       table += `
         <tr>
           <td>${room}</td>
-          <td>${course}: ${etype == 1 ? formatRanges(rolls) : formatReg(rolls)}</td>
+          <td>${course}</td>
+          <td>${etype == 1 ? formatRanges(rolls) : formatReg(rolls)}</td>
           <td>${rolls.length}</td>
         </tr>
       `;
@@ -1132,22 +1134,23 @@ async function generateReports(edate,session,aid,ename,etype){
       table+=`</tr></table>`
      })}
   else if(etype == 2){
-    table += `<table class="w-[50%] h-fit report pdf-page m-4">
+    table += `<table class="w-[50%] h-fit report pdf-page m-4" id="js-report-table">
     <tr>
-      <th colspan="4">Muthoot Institute of Technology and Science (Autonomous)</th>
+      <th colspan="5">Muthoot Institute of Technology and Science (Autonomous)</th>
     </tr>
     <tr>
-      <th colspan="4">${ename}</th>
+      <th colspan="5">${ename}</th>
     </tr>
     <tr>
-      <th colspan="4">Hall Allotment Plan</th>
+      <th colspan="5">Hall Allotment Plan</th>
     </tr>
     <tr>
-      <th colspan="4">Date of Exam: ${edate} <span class="mx-4"></span> Session: ${session}</th>
+      <th colspan="5">Date of Exam: ${edate} <span class="mx-4"></span> Session: ${session}</th>
     </tr>
     <tr>
       <th>Branch</th>
       <th>Hall</th>
+      <th>Course</th>
       <th>Roll No</th>
       <th>Total no of students</th>
     </tr>
@@ -1177,9 +1180,10 @@ async function generateReports(edate,session,aid,ename,etype){
 
     Object.entries(groupedByCourse).forEach(([course, rolls]) => {
       table += `
-        <tr>
-          <td>${room}</td>
-          <td>${course}: ${etype == 1 ? formatRanges(rolls) : formatReg(rolls)}</td>
+        <tr align="center">
+          <td align="center">${room}</td>
+          <td>${course}</td>
+          <td>${etype == 1 ? formatRanges(rolls) : formatReg(rolls)}</td>
           <td>${rolls.length}</td>
         </tr>
       `;
@@ -1192,7 +1196,7 @@ async function generateReports(edate,session,aid,ename,etype){
   table+=`</table>`
 
      }
-        document.querySelector('.js-hall-reports-div').innerHTML = table; 
+  document.querySelector('.js-hall-reports-div').innerHTML = table; 
 
   }
 
@@ -1202,6 +1206,62 @@ document.getElementById('download-hall-reports').addEventListener('click',()=>{
   downloadPDF();
 })
 
+document.getElementById('download-hall-xls-reports').addEventListener('click',()=>{
+  downloadXls("js-report-table");
+})
+
+function downloadXls(tableID, filename = 'Seating_Arrangement.xls') {
+
+    const table = document.getElementById(tableID);
+
+    const clone = table.cloneNode(true);
+
+    
+    clone.querySelectorAll("tr").forEach(tr => {
+        const td = tr.children[2];
+        if (td) {
+            td.setAttribute("style", "mso-number-format:'\\@';");
+        }
+    });
+    
+    clone.querySelectorAll("tr").forEach(tr => {
+        const cells = [...tr.querySelectorAll("td,th")];
+        const isEmpty = cells.every(td => td.innerText.trim() === "");
+        if (isEmpty) tr.remove();
+    });
+
+    
+
+    const template = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            table, th, td {
+                border:1px solid black;
+                border-collapse:collapse;
+                text-align:center;
+            }
+
+            td,th: {
+                mso-number-format:"\\@";
+            }
+        </style>
+    </head>
+    <body>
+        ${clone.outerHTML}
+    </body>
+    </html>`;
+
+    const blob = new Blob([template], { type: "application/vnd.ms-excel" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
 
 function downloadPDF() {
   const {edate,aid,session,ename,etype} = JSON.parse(localStorage.getItem('downloadReport'))
@@ -1229,6 +1289,10 @@ function downloadPDF() {
   })
   .catch(err => alert("PDF generation failed"));
 }
+
+document.querySelector('.js-download-room-xls-report').addEventListener('click', ()=>{
+  downloadXls("js-examhall-detailed-report")
+})
 
 document.querySelector('.js-download-room-report').addEventListener('click',()=>{
   const {edate,session,aid,roomId,examName,roomType,aSlots,bSlots,etype} = JSON.parse(localStorage.getItem('roomReport'))

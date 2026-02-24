@@ -80,7 +80,7 @@ if (isset($_GET['delete_id'])) {
         <?php if (isset($_GET['eid'])): ?>
           <h3 class="m-2 text-md"><?= $_GET['ename'] ?></h3>
         <?php endif; ?>
-        <div class="w-[840px] h-[600px] overflow-auto mt-[20px]">
+        <div class="w-[50vw] h-[70vh] overflow-auto mt-[20px]">
           <?php
           if (isset($_GET['eid']) && isset($_GET['ename'])) {
             $eid = $_GET['eid'];
@@ -163,7 +163,7 @@ if (isset($_GET['delete_id'])) {
           <?php if ($result->num_rows > 0): ?>
             <?php while ($row = $result->fetch_assoc()): ?>
               <div class="<?= (isset($_GET['eid']) && ($_GET['eid'] == $row['eid'])) ? "active" : "bg-[#151515]" ?> py-4 px-2 w-[98%] min-h-[110px] max-h-[120px] cursor-pointer  mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out">
-                <a href="exams.php?eid=<?= $row['eid'] ?>&ename=<?= $row['ename'] ?>&examtype=<?= $row['etype'] ?>" class="w-[100%] flex flex-col ml-2">
+                <a href="exams.php?eid=<?= $row['eid'] ?>&ename=<?= $row['ename'] ?>&examtype=<?= $row['etype'] ?>" class="w-[70%] flex flex-col ml-2">
                   <p class="text-md truncate text-">Exam Name - <?= $row['ename'] ?></p>
                   <p class="text-md">Exam Type - <?= $row['etype'] == "1" ? "Internal Exam" : "University Exam" ?></p>
                   <p class="text-md">Start Date - <?= $row['sdate'] ?></p>
@@ -232,7 +232,9 @@ if (isset($_GET['delete_id'])) {
   </div>
   <button @click="on=true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer absolute bottom-8 right-3"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
   <script type="module" src="./scripts/app.js"></script>
+
   <script>
+    // script for handling file input for internal & external appearing/tt lists
     const examType = document.getElementById("examTypeInput");
 
     const timetableDiv = document.querySelector(".exam-time-table-upload-container");

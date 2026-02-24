@@ -134,7 +134,11 @@ if (isset($_GET['deleteId'])) {
               </button>
               <button class="tooltip w-[45px] h-[45px] bg-white rounded-full border-2 border-gray-500 flex items-center justify-center js-download-room-report relative">
                 <img src="./assets/download_2.png" alt="download-icon">
-                <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">Download Hall Report</p>
+                <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">Download Hall Report (.pdf)</p>
+              </button>
+              <button class="tooltip w-[45px] h-[45px] bg-white rounded-full border-2 border-gray-500 flex items-center justify-center js-download-room-xls-report relative">
+                <img src="./assets/export_xls.png" alt="download-icon">
+                <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">Download Hall Report (.xls)</p>
               </button>
             </div>
             <div class="w-full h-[500px] overflow-auto  js-seating-data-container">
@@ -148,7 +152,10 @@ if (isset($_GET['deleteId'])) {
       x-show="on">
       <div class="w-full h-[20px] my-5 flex items-center justify-end">
         <button class="tooltip cursor-pointer relative z-50" id="download-hall-reports"><img src="./assets/download.png" alt="download icon" class="mr-4 h-[20px]">
-          <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm z-50 bg-[#686868] rounded-[4px] tooltiptext">Download Report</p>
+          <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm z-50 bg-[#686868] rounded-[4px] tooltiptext">Download Report (.pdf)</p>
+        </button>
+        <button class="tooltip cursor-pointer relative z-50" id="download-hall-xls-reports"><img src="./assets/xls-download.png" alt="download icon" class="mr-4 h-[20px]">
+          <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm z-50 bg-[#686868] rounded-[4px] tooltiptext">Download Report (.xls)</p>
         </button>
         <img @click="on = false" src="./assets/close.png" alt="close icon" class="mr-4 h-[20px] cursor-pointer">
       </div>
