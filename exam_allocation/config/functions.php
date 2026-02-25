@@ -34,6 +34,7 @@ function importRoomsFromCSV($conn, $fileTmpName, $block)
         fgetcsv($file);
 
         while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+            $data = array_map('trim', $data);
             $Block    = $data[0];
             $Room_no  = $data[1];
             $Capacity = $data[2];
@@ -66,6 +67,7 @@ function importStudentsFromCSV($conn, $fileTmpName)
         fgetcsv($file);
 
         while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+            $data = array_map('trim', $data);
             $regno    = $data[0];
             $rollno  = $data[1];
             $name = $data[2];
@@ -151,22 +153,29 @@ function addExamDefinition($conn, $filename)
         fgetcsv($file);
         if ($examType == 1) {
             while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+                $data = array_map('trim', $data);
                 $edate = $data[0];
                 $sess = $data[1];
                 $ccode = $data[2];
                 $sem = $data[3];
                 $branch = $data[4];
 
-                $stmts = $conn->prepare(
-                    "INSERT INTO exam_time_table(eid,edate,session,ccode,sem,branch) 
-                            VALUES (?, ?, ?, ?, ?, ?)
-                            "
-                );
-                $stmts->bind_param("isssis", $last_id, $edate, $sess, $ccode, $sem, $branch);
-                $stmts->execute();
+                $branchArray = array_map('trim', explode(',', $branch));
+
+                foreach ($branchArray as $branches) {
+                    $branches = trim($branches);
+                    $stmts = $conn->prepare(
+                        "INSERT INTO exam_time_table(eid,edate,session,ccode,sem,branch) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        "
+                    );
+                    $stmts->bind_param("isssis", $last_id, $edate, $sess, $ccode, $sem, $branches);
+                    $stmts->execute();
+                }
             }
         } elseif ($examType == 2) {
             while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+                $data = array_map('trim', $data);
                 $studId = $data[0];
                 $branch = $data[1];
                 $ccode = $data[2];
@@ -208,18 +217,23 @@ function importCoursesFromCSV($conn, $fileTmpName)
         fgetcsv($file);
 
         while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+            $data = array_map('trim', $data);
             $ccode    = $data[0];
             $cname  = $data[1];
             $is_elective = $data[2];
             $sem = $data[3];
             $branch = $data[4];
-            echo $ccode . $cname;
-            $stmt = $conn->prepare(
-                "INSERT INTO courses (ccode, cname, sem, branch, is_elective) 
-                 VALUES (?, ?, ?, ?, ?)"
-            );
-            $stmt->bind_param("ssisi", $ccode, $cname, $sem, $branch, $is_elective);
-            $stmt->execute();
+            $branchArray = array_map('trim', explode(',', $branch));
+
+            foreach ($branchArray as $branches) {
+                $branches = trim($branches);
+                $stmt = $conn->prepare(
+                    "INSERT INTO courses (ccode, cname, sem, branch, is_elective) 
+                     VALUES (?, ?, ?, ?, ?)"
+                );
+                $stmt->bind_param("ssisi", $ccode, $cname, $sem, $branches, $is_elective);
+                $stmt->execute();
+            }
         }
 
         fclose($file);
