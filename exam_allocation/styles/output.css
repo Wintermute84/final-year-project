@@ -249,6 +249,9 @@
   .-bottom-8 {
     bottom: calc(var(--spacing) * -8);
   }
+  .-bottom-10 {
+    bottom: calc(var(--spacing) * -10);
+  }
   .bottom-8 {
     bottom: calc(var(--spacing) * 8);
   }
@@ -456,9 +459,6 @@
   .h-\[20px\] {
     height: 20px;
   }
-  .h-\[20vh\] {
-    height: 20vh;
-  }
   .h-\[25px\] {
     height: 25px;
   }
@@ -483,23 +483,14 @@
   .h-\[50vh\] {
     height: 50vh;
   }
-  .h-\[60\%\] {
-    height: 60%;
-  }
   .h-\[60px\] {
     height: 60px;
-  }
-  .h-\[60vh\] {
-    height: 60vh;
   }
   .h-\[70vh\] {
     height: 70vh;
   }
   .h-\[80\%\] {
     height: 80%;
-  }
-  .h-\[80vh\] {
-    height: 80vh;
   }
   .h-\[90\%\] {
     height: 90%;
@@ -615,23 +606,11 @@
   .w-\[55vw\] {
     width: 55vw;
   }
-  .w-\[60\%\] {
-    width: 60%;
-  }
-  .w-\[60vw\] {
-    width: 60vw;
-  }
   .w-\[70\%\] {
     width: 70%;
   }
   .w-\[80\%\] {
     width: 80%;
-  }
-  .w-\[80vh\] {
-    width: 80vh;
-  }
-  .w-\[80vw\] {
-    width: 80vw;
   }
   .w-\[90\%\] {
     width: 90%;
@@ -684,9 +663,6 @@
   .w-\[800px\] {
     width: 800px;
   }
-  .w-\[840px\] {
-    width: 840px;
-  }
   .w-fit {
     width: fit-content;
   }
@@ -738,17 +714,11 @@
   .cursor-pointer {
     cursor: pointer;
   }
-  .resize {
-    resize: both;
-  }
   .list-disc {
     list-style-type: disc;
   }
   .grid-flow-col {
     grid-auto-flow: column;
-  }
-  .grid-rows-6 {
-    grid-template-rows: repeat(6, minmax(0, 1fr));
   }
   .grid-rows-10 {
     grid-template-rows: repeat(10, minmax(0, 1fr));
@@ -956,6 +926,9 @@
   .bg-\[\#E5E5E5\] {
     background-color: #E5E5E5;
   }
+  .bg-\[\#fff\] {
+    background-color: #fff;
+  }
   .bg-black {
     background-color: var(--color-black);
   }
@@ -1062,9 +1035,6 @@
   }
   .text-nowrap {
     text-wrap: nowrap;
-  }
-  .text-wrap {
-    text-wrap: wrap;
   }
   .break-all {
     word-break: break-all;
@@ -1198,16 +1168,6 @@
       width: 60%;
     }
   }
-  .sm\:grid-rows-3 {
-    @media (width >= 40rem) {
-      grid-template-rows: repeat(3, minmax(0, 1fr));
-    }
-  }
-  .sm\:grid-rows-10 {
-    @media (width >= 40rem) {
-      grid-template-rows: repeat(10, minmax(0, 1fr));
-    }
-  }
   .md\:w-\[30\%\] {
     @media (width >= 48rem) {
       width: 30%;
@@ -1339,6 +1299,12 @@ tr > td, tr > th {
 }
 .nav-bar > p {
   font-size: 99%;
+}
+.js-popup {
+  transition: all ease-in-out 0.3s;
+}
+.flicker {
+  opacity: 1;
 }
 .selected-date, .active {
   color: black;

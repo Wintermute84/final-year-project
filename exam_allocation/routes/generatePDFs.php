@@ -380,18 +380,25 @@ td {
 </html>
 ";
 
-file_put_contents("temp.html", $html);
+$uploadDirectory = __DIR__ . "/../Reports/{$edate}_{$session}/";
 
+if (!is_dir($uploadDirectory)) {
+  mkdir($uploadDirectory, 0777, true);
+}
 
-exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access --page-size A3 temp.html report.pdf');
+$fileName = "main_{$edate}_{$session}.pdf";
 
+$tempHtmlPath = $uploadDirectory . "temp.html";
+$pdfPath      = $uploadDirectory . $fileName;
+
+file_put_contents($tempHtmlPath, $html);
+
+exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access --page-size A3 "' . $tempHtmlPath . '" "' . $pdfPath . '"');
 
 header("Content-Type: application/pdf");
-header("Content-Disposition: attachment; filename=$edate-$session-Seating_Report.pdf");
+header("Content-Disposition: attachment; filename=\"$fileName\"");
 
-readfile("report.pdf");
-
-unlink("temp.html");
-unlink("report.pdf");
+readfile($pdfPath);
+unlink($tempHtmlPath);
 
 exit;

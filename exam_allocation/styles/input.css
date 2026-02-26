@@ -135,6 +135,14 @@ tr > th {
   font-size: 99%;
 }
 
+.js-popup {
+  transition: all ease-in-out 0.3s;
+}
+
+.flicker {
+  opacity: 1;
+}
+
 .selected-date,
 .active {
   color: black;

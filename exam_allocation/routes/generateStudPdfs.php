@@ -5,7 +5,7 @@ $input = json_decode(file_get_contents("php://input"), true);
 
 if (!isset($input['edate'], $input['session'], $input['aid'], $input['ename'],  $input['roomId'], $input['roomType'], $input['aSlots'], $input['bSlots'])) {
   http_response_code(400);
-  echo "Invalid request";
+  echo "Invalid request" . $input['edate'] . $input['session'] . $input['aid'] . $input['ename'] . $input['roomId'] . $input['roomType'] . serialize($input['aSlots']) . serialize($input['bSlots']);
   exit;
 }
 
@@ -220,16 +220,26 @@ th, td {
 </html>
 ";
 
-file_put_contents("temp.html", $html);
+$uploadDirectory = __DIR__ . "/../Reports/{$edate}_{$session}/";
 
-exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access temp.html report.pdf');
+if (!is_dir($uploadDirectory)) {
+  mkdir($uploadDirectory, 0777, true);
+}
+
+$fileName = "{$roomId}_{$edate}_{$session}.pdf";
+
+$tempHtmlPath = $uploadDirectory . "temp.html";
+$pdfPath      = $uploadDirectory . $fileName;
+
+file_put_contents($tempHtmlPath, $html);
+
+exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access --page-size A3 "' . $tempHtmlPath . '" "' . $pdfPath . '"');
 
 header("Content-Type: application/pdf");
-header("Content-Disposition: attachment; filename=Hall_Report.pdf");
+header("Content-Disposition: attachment; filename=\"$fileName\"");
 
-readfile("report.pdf");
+readfile($pdfPath);
+unlink($tempHtmlPath);
 
-unlink("temp.html");
-unlink("report.pdf");
 
 exit;

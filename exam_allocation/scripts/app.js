@@ -1276,22 +1276,99 @@ function downloadPDF() {
       etype:etype
     })
   })
-  .then(res => res.blob())
-  .then(blob => {
-
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${edate}_${session}_${ename}_Seating_Report.pdf`;
-    a.click();
-
-  })
   .catch(err => alert("PDF generation failed"));
+  showPopUp("Downloaded",".js-popup")
 }
 
 document.querySelector('.js-download-room-xls-report').addEventListener('click', ()=>{
   downloadXls("js-examhall-detailed-report")
+})
+
+function batchDownloadReport() {
+  document.querySelectorAll('.js-room-blocks').forEach(room => {
+    const edate   = room.dataset.edate;
+    const etype   = room.dataset.etype;
+    const aid     = room.dataset.aid;
+    const ename   = JSON.parse(localStorage.getItem('downloadReport'));
+    const session = room.dataset.session;
+    const roomId  = room.dataset.roomId;
+    const roomType = room.dataset.roomType; 
+    fetch("./routes/getSeatedStudentData.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        edate,
+        session,
+        aid,
+        roomId,
+        etype
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+
+      let students = d.students;
+      let md = Math.ceil(students.length / 2);
+
+      let aSlot = etype == 2
+        ? students.filter(s => s['seat'][0] === 'A')
+        : students.slice(0, md);
+
+      let bSlot = etype == 2
+        ? students.filter(s => s['seat'][0] === 'B')
+        : students.slice(md);
+
+      return fetch("./routes/generateStudPdfs.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          edate: edate,
+          session: session,
+          aid: aid,
+          ename: ename,
+          roomId: roomId,
+          roomType: roomType,
+          aSlots: aSlot,
+          bSlots: bSlot,
+          etype: etype
+        })
+      });
+
+    })
+    .catch(err => alert("PDF generation failed"));
+
+  });
+  
+  const {edate,aid,session,ename,etype} = JSON.parse(localStorage.getItem('downloadReport'))
+  fetch("./routes/generatePDFs.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      edate: edate,
+      session: session,
+      aid: aid,
+      ename:ename,
+      etype:etype
+    })
+  })
+  .catch(err => alert("PDF generation failed"));
+  showPopUp("Downloaded",'.js-popup')
+}
+
+function showPopUp(message, jsClass) {
+  const btn = document.querySelector(jsClass);
+  if (!btn) return; 
+  btn.textContent = message;
+  btn.classList.remove('flicker');
+  void btn.offsetWidth;
+  btn.classList.add('flicker');
+  setTimeout(() => {
+    btn.classList.remove('flicker');
+  }, 1000);
+}
+
+document.querySelector('.js-batch-download-report').addEventListener('click',()=>{
+  batchDownloadReport();
 })
 
 document.querySelector('.js-download-room-report').addEventListener('click',()=>{
@@ -1311,18 +1388,7 @@ document.querySelector('.js-download-room-report').addEventListener('click',()=>
       etype:etype
     })
   })
-  .then(res => res.blob())
-  .then(blob => {
-
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${roomId}_${edate}_${session}_${examName}_Seating_Report.pdf`;
-    a.click();
-
-  })
   .catch(err => alert("PDF generation failed"));
-
+  showPopUp("Downloaded!",".js-popup")
 })
 

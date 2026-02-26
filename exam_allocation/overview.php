@@ -132,6 +132,11 @@ if (isset($_GET['deleteId'])) {
                 <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">View Semester Wise Reports</p>
                 <img src="./assets/home.png" alt="home-icon">
               </button>
+              <button class="tooltip w-[45px] h-[45px] bg-white rounded-full border-2 border-gray-500 flex items-center justify-center js-batch-download-report relative">
+                <img src="./assets/batch_download.png" alt="download-icon">
+                <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">Batch Download Report (.pdf)</p>
+                <p class="absolute -bottom-10 right-0 text-nowrap p-1 text-sm bg-[#fff] rounded-[4px] opacity-0 select-none js-popup">Downloaded!</p>
+              </button>
               <button class="tooltip w-[45px] h-[45px] bg-white rounded-full border-2 border-gray-500 flex items-center justify-center js-download-room-report relative">
                 <img src="./assets/download_2.png" alt="download-icon">
                 <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">Download Hall Report (.pdf)</p>
