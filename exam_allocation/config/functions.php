@@ -229,7 +229,12 @@ function importCoursesFromCSV($conn, $fileTmpName)
                 $branches = trim($branches);
                 $stmt = $conn->prepare(
                     "INSERT INTO courses (ccode, cname, sem, branch, is_elective) 
-                     VALUES (?, ?, ?, ?, ?)"
+                    VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE 
+                    ccode = VALUES(ccode),
+                    sem = VALUES(sem),
+                    cname = VALUES(cname),
+                    branch = VALUES(branch),
+                    is_elective = VALUES(is_elective)"
                 );
                 $stmt->bind_param("ssisi", $ccode, $cname, $sem, $branches, $is_elective);
                 $stmt->execute();

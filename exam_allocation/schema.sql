@@ -43,8 +43,9 @@ CREATE TABLE IF NOT EXISTS `courses` (
   `is_elective` int NOT NULL DEFAULT (0),
   `sem` int NOT NULL DEFAULT (0),
   `branch` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
-  PRIMARY KEY (`cid`)
-) ENGINE=InnoDB AUTO_INCREMENT=811 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  PRIMARY KEY (`cid`),
+  UNIQUE KEY `ccode` (`ccode`,`branch`,`sem`)
+) ENGINE=InnoDB AUTO_INCREMENT=973 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
@@ -126,7 +127,7 @@ CREATE TABLE IF NOT EXISTS `students` (
   `minor` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`student_id`),
   UNIQUE KEY `Index 2` (`reg_no`)
-) ENGINE=InnoDB AUTO_INCREMENT=4149 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4803 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
