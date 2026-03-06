@@ -486,8 +486,21 @@ function algoThree($conn, $semester1, $semester2, $semester3, $orderfield1, $ord
 
 
 
-function algoFour($conn, $semester1, $semester2, $semester3, $semester4, $orderfield1, $orderfield2, $orderfield3, $orderfield4, $rooms, $edate, $session, $eid)
-{
+function algoFour(
+  $conn,
+  $semester1,
+  $semester2,
+  $semester3,
+  $semester4,
+  $orderfield1,
+  $orderfield2,
+  $orderfield3,
+  $orderfield4,
+  $rooms,
+  $edate,
+  $session,
+  $eid
+) {
   if (checkIfElective($conn, $edate, $session, $semester1, $eid)) {
     $grp1 = returnElectiveData($conn, $edate, $session, $semester1, $orderfield1, $edate, $session, $eid);
   } else {

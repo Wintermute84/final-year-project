@@ -117,6 +117,7 @@ document.getElementById("proceedBtn")?.addEventListener("click", () => {
     if(data.error){
       alert(data.error + " Discrepancy on " + data.discrepancy)
     }
+    sessionStorage.clear()
     window.location.href="seating_plan.php";
   })
   .catch(err => {
@@ -181,6 +182,7 @@ let currentSlot = null;
 let availableSems = new Set()
 let sem = []
 let sem_groupings = []
+
 function loadSemGroupingUI(sems, slotDiv, grouping) {
   currentSlot = slotDiv;
   const container = document.getElementById("numberContainer");
@@ -234,6 +236,7 @@ document.getElementById("createGroupBtn")?.addEventListener("click", () => {
   if (!currentSlot) return alert("Select a slot first");
   const sems = [...selected];
   if (sems.length === 0) return alert("Select 1 or 2 sems");
+  if(sem.length === 2 && sems.length === 1) return alert("For 2 semester exams, group 2 sems in a single group!") 
   if (sems.length > 2) return alert("Max 2 sems per group");
   groups.push(sems);
   sems.forEach(s => {
@@ -289,8 +292,8 @@ document.getElementById("deleteGroupBtn")?.addEventListener("click", () => {
 
 document.getElementById("proceedfBtn")?.addEventListener("click", () => {
   const allSlots = [...document.querySelectorAll(".js-slot-div")];
-  const allGrouped = allSlots.every(d => d.classList.contains("grouped"));
-  if (!allGrouped) return alert("Complete grouping for all slots first!");
+  const allGrouped = allSlots.some(d => d.classList.contains("grouped"));
+  if (!allGrouped) return alert("Complete grouping for at least 1 slot first!");
   else{
     const payload = {};
     allSlots.forEach(d => {
@@ -468,8 +471,8 @@ function addUniUnshiftListeners(jsClass){
 
 document.getElementById("uniProceedButton")?.addEventListener("click", () => {
   const allSlots = [...document.querySelectorAll(".js-uni-shuffle-div")];
-  const allGrouped = allSlots.every(d => d.classList.contains("grouped"));
-  if (!allGrouped) return alert("Complete grouping for all slots first!");
+  const allGrouped = allSlots.some(d => d.classList.contains("grouped"));
+  if (!allGrouped) return alert("Complete grouping for at least 1 slot first!");
   else{
     const payload = {};
     allSlots.forEach(d => {
@@ -1289,7 +1292,7 @@ function batchDownloadReport() {
     const edate   = room.dataset.edate;
     const etype   = room.dataset.etype;
     const aid     = room.dataset.aid;
-    const ename   = JSON.parse(localStorage.getItem('downloadReport'));
+    const ename   = JSON.parse(localStorage.getItem('downloadReport')).ename;
     const session = room.dataset.session;
     const roomId  = room.dataset.roomId;
     const roomType = room.dataset.roomType; 
@@ -1349,6 +1352,17 @@ function batchDownloadReport() {
       aid: aid,
       ename:ename,
       etype:etype
+    })
+  })
+  .catch(err => alert("PDF generation failed"));
+  fetch("./routes/generateRoomCount.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      edate: edate,
+      session: session,
+      aid: aid,
+      ename:ename
     })
   })
   .catch(err => alert("PDF generation failed"));

@@ -74,7 +74,7 @@ $tableHtml = "
 <div class='pdf-page ding'>
   <table border='1' style='width:100%;'>
     <tr><th colspan='2'>Muthoot Institute of Technology and Science (Autonomous)</th></tr>
-    <tr><th colspan='2'>$ename</th></tr>
+    <tr><th colspan='2'>{$ename}</th></tr>
     <tr><th colspan='2'>Date of Exam: $edate &nbsp;&nbsp; Session: $session</th></tr>
     <tr><th colspan='2'>Hall Seating Arrangement</th></tr>
     <tr><th colspan='2'>Hall No: $roomId</th></tr>

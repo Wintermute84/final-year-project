@@ -251,14 +251,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
             <div class="overflow-auto max-h-[300px] w-[30%] flex flex-col gap-2">
               <?php if ($examInfo->num_rows > 0): ?>
                 <?php while ($row = $examInfo->fetch_assoc()): ?>
-                  <div
-                    class="<?= "S" . $_SESSION['eid'] . "_" . $row['edate'] . "_" . $row['session'] ?> py-4 min-w-[45%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-shuffle-div"
-                    data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-eid="<?= $_SESSION['eid'] ?>">
-                    <div class="w-fit flex flex-col ml-2">
-                      <p class="text-md select-none">Exam Date - <?= $row['edate'] ?></p>
-                      <p class="text-md select-none">Session - <?= $row['session'] ?></p>
+                  <?php if (!empty($_SESSION['sem_groupings']['semGroups_' . $_SESSION['eid'] . '_' . $row['edate'] . '_' . $row['session']])): ?>
+                    <div
+                      class="<?= "S" . $_SESSION['eid'] . "_" . $row['edate'] . "_" . $row['session'] ?> py-4 min-w-[45%] min-h-[110px] max-h-[120px] cursor-pointer bg-[#151515] mr-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out js-shuffle-div"
+                      data-edate="<?= $row['edate'] ?>" data-session="<?= $row['session'] ?>" data-eid="<?= $_SESSION['eid'] ?>">
+                      <div class="w-fit flex flex-col ml-2">
+                        <p class="text-md select-none">Exam Date - <?= $row['edate'] ?></p>
+                        <p class="text-md select-none">Session - <?= $row['session'] ?></p>
+                      </div>
                     </div>
-                  </div>
+                  <?php endif ?>
                 <?php endwhile; ?>
               <?php else: ?>
                 <p>No Data found.</p>

@@ -393,7 +393,8 @@ $pdfPath      = $uploadDirectory . $fileName;
 
 file_put_contents($tempHtmlPath, $html);
 
-exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access --page-size A3 "' . $tempHtmlPath . '" "' . $pdfPath . '"');
+exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access --page-size A3 "'
+  . $tempHtmlPath . '" "' . $pdfPath . '"');
 
 header("Content-Type: application/pdf");
 header("Content-Disposition: attachment; filename=\"$fileName\"");

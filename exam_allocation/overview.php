@@ -127,7 +127,7 @@ if (isset($_GET['deleteId'])) {
             </div>
           </section>
           <section class="flex-1 flex-col">
-            <div class="w-[300px] h-[60px] bg-[#000000] mx-auto mb-5 rounded-[8px] border border-white flex items-center justify-center gap-2">
+            <div class="w-[300px] h-[60px] bg-[#000000] mx-auto my-5 rounded-[8px] border border-white flex items-center justify-center gap-2">
               <button @click="on=true" class="tooltip w-[45px] h-[45px] bg-white rounded-full border-2 border-gray-500 flex items-center justify-center relative">
                 <p class="absolute -bottom-8 right-0 text-nowrap p-1 text-sm bg-[#686868] rounded-[4px] tooltiptext">View Semester Wise Reports</p>
                 <img src="./assets/home.png" alt="home-icon">
