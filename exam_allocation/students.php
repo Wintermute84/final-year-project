@@ -181,6 +181,7 @@ if (isset($_GET['semesterId']) && isset($_GET['branchId'])) {
         <img @click="on = false" src="./assets/close.png" alt="close icon" class="absolute right-0 mr-4 h-[20px] cursor-pointer">
       </div>
       <form method="post" enctype="multipart/form-data" class="flex justify-center gap-3 mt-16">
+        <button type="button" data-type="2" class="bg-white  border rounded-[3px] w-[112px] h-[41px] js-download-mock-data">Mock Format</button>
         <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label" for="file">Choose File</label>
         <input type="file" id="file" name="file" accept=".csv" required>
         <button type="submit" name="student-upload" class="upload-button bg-white border rounded-[3px] w-[112px] h-[41px]">Upload</button>

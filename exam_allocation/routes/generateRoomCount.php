@@ -1,5 +1,6 @@
 <?php
 include __DIR__ . '/../config/db_connect.php';
+
 $input = json_decode(file_get_contents("php://input"), true);
 $aid = $input['aid'];
 $ename = $input['ename'];
@@ -10,57 +11,67 @@ if (!isset($aid, $ename, $session, $edate)) {
   die("Input not set! Cannot generate room-wise count!");
 }
 
-$sql = "SELECT electiveCourseId as course,room,COUNT(*) AS student_count FROM seating_allocation_data WHERE aid = ? and edate = ? and session = ? GROUP BY electiveCourseId,room ";
+$sql = "SELECT electiveCourseId AS course, room, COUNT(*) AS student_count
+        FROM seating_allocation_data
+        WHERE aid = ? AND edate = ? AND session = ?
+        GROUP BY electiveCourseId, room
+        ORDER BY electiveCourseId, room";
+
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("iss", $aid, $edate, $session);
 $stmt->execute();
 $result = $stmt->get_result();
 
+
+$courses = [];
+
 while ($row = $result->fetch_assoc()) {
-  $data[] = $row;
+  $courses[$row['course']][] = [
+    'room' => $row['room'],
+    'count' => $row['student_count']
+  ];
 }
 
-$html = "<div class='pdf-page ding'>
-  <table border='1' style='width:100%;'>
-    <tr><th colspan='3'>Muthoot Institute of Technology and Science (Autonomous)</th></tr>
-    <tr><th colspan='3'>{$ename}</th></tr>
-    <tr><th colspan='3'>Date of Exam: $edate &nbsp;&nbsp; Session: $session</th></tr>
-    <tr>
-      <th>Hall</th>
-      <th>Course Code</th>
-      <th>Count</th>
-    </tr>
+
+$html = "<div class='pdf-page'>
+<table border='1' style='width:100%;'>
+
+<tr><th colspan='3'>Muthoot Institute of Technology and Science (Autonomous)</th></tr>
+<tr><th colspan='3'>{$ename}</th></tr>
+<tr><th colspan='3'>Date of Exam: $edate &nbsp;&nbsp; Session: $session</th></tr>
+<tr><th>Course</th><th>Room</th><th>Count</th></tr>
 ";
 
-foreach ($data as $s) {
-  $room = $s['room'];
-  $course = $s['course'];
-  $count = $s['student_count'];
-  $html .=
-    "<tr>
-    <td align='center'>$room</td>                
-    <td align='center'>$course</td>
-    <td align='center'>$count</td>
-   </tr> 
-  ";
+
+
+foreach ($courses as $course => $rooms) {
+  $html .= "<tr>";
+  $rowspan = count($rooms) + 1;
+  $html .= "<th rowspan='{$rowspan}' align='center'>{$course}</th>";
+  foreach ($rooms as $r) {
+    $html .= "<tr><td align='center'>{$r['room']}</td>";
+    $html .= "<td align='center'>{$r['count']}</td></tr>";
+  }
+  $html .= "</tr>";
 }
 
-$html .= "</table>";
+
+$html .= "</table></div>";
+
 
 $tablehtml = "
 <html>
 <head>
 <style>
+
 .pdf-page {
   page-break-after: always;
 }
 
 table {
   border-collapse: collapse;
-  page-break-inside: avoid;
   margin: 0 auto;
-  }
-
+}
 
 th, td {
   padding: 4px;
@@ -69,13 +80,13 @@ th, td {
 td{
   font-weight:bold;
 }
+
 </style>
 </head>
 
 <body>
 {$html}
 </body>
-
 </html>
 ";
 
@@ -85,7 +96,7 @@ if (!is_dir($uploadDirectory)) {
   mkdir($uploadDirectory, 0777, true);
 }
 
-$fileName = "course_count_{$roomId}_{$edate}_{$session}.pdf";
+$fileName = "course_count_{$edate}_{$session}.pdf";
 
 $tempHtmlPath = $uploadDirectory . "temp.html";
 $pdfPath      = $uploadDirectory . $fileName;
@@ -98,7 +109,7 @@ header("Content-Type: application/pdf");
 header("Content-Disposition: attachment; filename=\"$fileName\"");
 
 readfile($pdfPath);
-unlink($tempHtmlPath);
 
+unlink($tempHtmlPath);
 
 exit;

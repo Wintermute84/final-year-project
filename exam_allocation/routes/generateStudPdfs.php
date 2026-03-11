@@ -24,7 +24,7 @@ $etype = $input['etype'];
 $aCounts = [];
 foreach ($aSlots as $s) {
   $sem    = $s['semester'] ?? '';
-  $key    = $sem . '|' . $s['branch'] . '|' . $s['course'];
+  $key    = $sem . '|' . $s['branch'] . '|' . trim($s['course']);
   $aCounts[$key] = ($aCounts[$key] ?? 0) + 1;
 }
 
@@ -32,7 +32,7 @@ $aPrinted = [];
 foreach ($aSlots as &$s) {
 
   $sem = $s['semester'] ?? '';
-  $key = $sem . '|' . $s['branch'] . '|' . $s['course'];
+  $key = $sem . '|' . $s['branch'] . '|' . trim($s['course']);
 
   $s['rowspan']    = 0;
   $s['printGroup'] = false;
@@ -49,7 +49,7 @@ unset($s);
 $bCounts = [];
 foreach ($bSlots as $s) {
   $sem    = $s['semester'] ?? '';
-  $key    = $sem . '|' . $s['branch'] . '|' . $s['course'];
+  $key    = $sem . '|' . $s['branch'] . '|' . trim($s['course']);
   $bCounts[$key] = ($bCounts[$key] ?? 0) + 1;
 }
 
@@ -57,7 +57,7 @@ $bPrinted = [];
 foreach ($bSlots as &$s) {
 
   $sem = $s['semester'] ?? '';
-  $key = $sem . '|' . $s['branch'] . '|' . $s['course'];
+  $key = $sem . '|' . $s['branch'] . '|' . trim($s['course']);
 
   $s['rowspan']    = 0;
   $s['printGroup'] = false;
@@ -100,7 +100,7 @@ foreach ($aSlots as $student) {
   $branch   = $student['branch'];
   $rollno   = $etype == 1 ? $student['rollno'] : $student['reg_no'];
   $seat     = $student['seat'];
-  $course   = $student['course'];
+  $course   = trim($student['course']);
 
   $tableHtml .= "<tr>";
 
@@ -150,7 +150,7 @@ foreach ($bSlots as $student) {
   $branch   = $student['branch'];
   $rollno   = $etype == 1 ? $student['rollno'] : $student['reg_no'];
   $seat     = $student['seat'];
-  $course   = $student['course'];
+  $course   = trim($student['course']);
 
   $tableHtml .= "<tr>";
 
@@ -233,7 +233,7 @@ $pdfPath      = $uploadDirectory . $fileName;
 
 file_put_contents($tempHtmlPath, $html);
 
-exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access --page-size A3 "' . $tempHtmlPath . '" "' . $pdfPath . '"');
+exec('"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe" --enable-local-file-access --page-size A4 "' . $tempHtmlPath . '" "' . $pdfPath . '"');
 
 header("Content-Type: application/pdf");
 header("Content-Disposition: attachment; filename=\"$fileName\"");

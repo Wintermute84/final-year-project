@@ -109,7 +109,7 @@ function getStudData($conn, $semester, $orderfield, $edate, $session, $eid)
 
 function getNormalRoomData($conn, $rooms)
 {
-  $stmt = $conn->prepare("SELECT * from rooms where Rid IN ($rooms) and type='Normal'");
+  $stmt = $conn->prepare("SELECT * from rooms where Rid IN ($rooms) and type='Normal' order by field(Rid,$rooms)");
   $stmt->execute();
   $result = $stmt->get_result();
   return $result;

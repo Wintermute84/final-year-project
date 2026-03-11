@@ -85,6 +85,7 @@ function importStudentsFromCSV($conn, $fileTmpName)
                     elective_1 = VALUES(elective_1),
                     elective_2 = VALUES(elective_2),
                     elective_3 = VALUES(elective_3),
+                    branch = VALUES(branch),
                     minor = VALUES(minor)
                 "
             );

@@ -15,6 +15,54 @@ document.querySelectorAll(".js-room-div").forEach(div => (
   })
 ))
 
+function mockCsvDownload(headers,fileName){
+  const csvContent = headers.join(",") + "\n"; 
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute("href", url);
+  link.setAttribute("download", fileName);
+  link.style.visibility = "hidden";
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+}
+
+function downloadMockData(type){
+  if(type == 1){
+    const headers = ["Block", "Room No (eg. M101)","Capacity","Type (Normal/Drawing)"]; 
+    mockCsvDownload(headers,'roomDetails')
+  }
+  else if(type == 2){
+    const headers = ["Register_No (eg.MUT22CS149)","Roll_No (eg.75)","Name (eg. Zacharia Joseph)", "Branch (eg. CSE A)", "Semester (eg. 7)","Elective 1", "Elective 2", "Elective 3", "Minor"]; 
+    mockCsvDownload(headers,'StudentDetails')
+  }
+  else if(type == 3){
+    const headers = ["Course_Code","Course Name","Is_Elective (eg. 1 (Yes) | 0 (No))","Semester (eg. 7)", "Branch (eg. CSE A)"]; 
+    mockCsvDownload(headers,'CourseDetails')
+  }
+  else if(type == 4){
+    const headers = ["Exam_Date (eg. 13-07-2026)","Session (FN/AN)","Course_Code","Semester (eg. 7)", "Department (eg. CSE A)"]; 
+    mockCsvDownload(headers,'ExamTimeTable')
+  }
+  else if(type == 5){
+    const headers = ["Register_No (eg. MUT22CS149)","Branch (eg. ECE)","Course_Code","Exam_Date", "Exam Session (FN/AN)"]; 
+    mockCsvDownload(headers,'Appearing List')
+  }
+}
+
+document.querySelectorAll('.js-download-mock-data').forEach(btn => {
+  btn.addEventListener('click', ()=>{
+    const type = btn.dataset.type;
+    downloadMockData(type);
+  })
+})
+
+
 function higlightDiv(dataObj,jsClass){
   if(jsClass === ".js-room-div"){
     document.querySelectorAll(jsClass).forEach(div => {
@@ -904,53 +952,47 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
       let html = `<div class="w-[90%] flex flex-col border" id="js-examhall-detailed-report">
     <table class="font-['sans-serif']">
       <tr>
-        <th>Muthoot Institute of Technology and Science (Autonomous)</th>
+        <th  colspan='6'>Muthoot Institute of Technology and Science (Autonomous)</th>
       </tr>
       <tr>
-        <th>${examName}</th>
+        <th  colspan='6'>${examName}</th>
       </tr>
       <tr>
-        <th>Date of Exam: ${edate} <span class="mx-8"></span>Session: ${session}</th>
+        <th colspan='6'>Date of Exam: ${edate} <span class="mx-8"></span>Session: ${session}</th>
       </tr>
       <tr>
-        <th>Hall Seating Arrangement</th>
+        <th colspan='6'>Hall Seating Arrangement</th>
       </tr>
       <tr>
-        <th>Hall No: ${roomId}</th>
+        <th colspan='6'>Hall No: ${roomId}</th>
       </tr>
     </table>
     <div class="flex w-full justify-between gap-10">
-        <table class="w-[50%] h-fit">
+        <table class="w-[100%] h-fit">
           <tr border="0">
+            <th>Branch</th>
+            <th>Roll No</th>
+            <th>Seat</th>
             <th>Branch</th>
             <th>Roll No</th>
             <th>Seat</th>
           </tr>`
     let aSlot = students.filter(student => student['seat'][0] === 'A')
     let bSlot = students.filter(student => student['seat'][0] === 'B')
+    let maxLen = Math.max(aSlot.length,bSlot.length)
     localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:aSlot,bSlots:bSlot,etype:etype}))
-    aSlot.forEach(student => {
-      html += `<tr>
-            <td align="center">${etype == 1 ? `S${student.semester}` : ""}  ${student.branch}</td>
-            <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
-            <td align="center">${student.seat}</td>
+    for(let i=0;i<maxLen;i+=1){
+      let a = aSlot[i]
+      let b = bSlot[i]
+       html += `<tr>
+            <td align="center">${etype == 1 ? `S${a.semester}` : ""}  ${a.branch}</td>
+            <td align="center">${etype == 1  ? a.rollno : a.reg_no}</td>
+            <td align="center">${a.seat}</td>
+            <td align="center">${etype == 1 ? `S${b.semester}` : ""}  ${b.branch ? b.branch : ""}</td>
+            <td align="center">${etype == 1  ? (b.rollno ? b.rollno : "") : (b.reg_no ? b.reg_no : "")}</td>
+            <td align="center">${b.seat}</td>
           </tr>`
-    })
-    html += `</table>
-    <table class="w-[50%] h-fit">
-          <tr border="0">
-            <th>Branch</th>
-            <th>Roll No</th>
-            <th>Seat</th>
-          </tr>
-        `;
-    bSlot.forEach(student => {
-      html += `<tr>
-            <td align="center">${etype == 1 ? `S${student.semester}` : ""}  ${student.branch}</td>
-            <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
-            <td align="center">${student.seat}</td>
-          </tr>`
-    })
+    }
     html += `</table></div></div>`
     document.querySelector('.js-seating-data-container').innerHTML = html; 
     }
@@ -1097,7 +1139,6 @@ async function generateReports(edate,session,aid,ename,etype){
     `
      Object.entries(roomInfo).forEach(([branch, rinfo]) => {
 
-  // calculate correct rowspan
   const branchRowCount = Object.values(rinfo).reduce(
     (sum, roomData) => {
       const courseCount = new Set(roomData.map(([_, course]) => course)).size;
@@ -1264,6 +1305,8 @@ function downloadXls(tableID, filename = 'Seating_Arrangement.xls') {
     link.href = URL.createObjectURL(blob);
     link.download = filename;
     link.click();
+    showPopUp("Downloaded!",'.js-popup-xls-report')
+
 }
 
 function downloadPDF() {
@@ -1366,8 +1409,25 @@ function batchDownloadReport() {
     })
   })
   .catch(err => alert("PDF generation failed"));
-  showPopUp("Downloaded",'.js-popup')
+  showPopUp("Downloaded!",'.js-popup')
 }
+
+document.querySelector(".js-download-room-count-report").addEventListener('click', ()=>{
+  const {edate,aid,session,ename} = JSON.parse(localStorage.getItem('downloadReport'))
+  fetch("./routes/generateRoomCount.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      edate: edate,
+      session: session,
+      aid: aid,
+      ename:ename
+    })
+  })
+  .catch(err => alert("PDF generation failed"));
+  showPopUp("Downloaded!",'.js-popup-course-count-report')
+})
+
 
 function showPopUp(message, jsClass) {
   const btn = document.querySelector(jsClass);
@@ -1403,6 +1463,6 @@ document.querySelector('.js-download-room-report').addEventListener('click',()=>
     })
   })
   .catch(err => alert("PDF generation failed"));
-  showPopUp("Downloaded!",".js-popup")
+  showPopUp("Downloaded!",".js-popup-hall-report")
 })
 

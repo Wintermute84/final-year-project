@@ -214,6 +214,7 @@ if (isset($_GET['delete_id'])) {
         <div class="flex-col gap-2 exam-time-table-upload-container hidden">
           <p>Exam Time Table Upload</p>
           <div class="flex gap-2 items-center justify-start">
+            <button type="button" data-type="4" class="bg-white  border rounded-[3px] w-[112px] h-[41px] js-download-mock-data">Mock Format</button>
             <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label1" for="file1">Choose File</label>
             <input type="file" id="file1" name="time-table-upload-file" class="time-table-upload-input" accept=".csv">
           </div>
@@ -221,6 +222,7 @@ if (isset($_GET['delete_id'])) {
         <div class="flex-col gap-2 appearing-list-upload-container hidden">
           <p>Appearing List Upload</p>
           <div class="flex gap-2 items-center justify-start">
+            <button type="button" data-type="5" class="bg-white  border rounded-[3px] w-[112px] h-[41px] js-download-mock-data">Mock Format</button>
             <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label2" for="file2">Choose File</label>
             <input type="file" id="file2" class="appearing-list-upload-input" name="appearing-list-upload-file" accept=".csv">
           </div>
