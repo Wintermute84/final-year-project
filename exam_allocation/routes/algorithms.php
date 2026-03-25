@@ -637,6 +637,33 @@ function algoUniOne($conn, $shuffleOrder, $rooms, $edate, $session, $eid)
   $grp = getUniStudData($conn, $shuffleOrder, $edate, $session, $eid);
   $x = count($grp);
   $y = 0;
+  $dIndex = 0;
+
+  $drawingRoomAllocation = [];
+  $g = getDrawingRoomData($conn, $rooms);
+  while ($row = $g->fetch_assoc()) {
+    $drawingRoomData[] = $row;
+  }
+
+  foreach ($drawingRoomData as $room) {
+
+    $roomName = $room['Room_no'];
+
+    for ($i = 0; $i < 60 && $dIndex < $x; $i++) {  //drawing rooms are capped at 60 capacity. 
+      $drawingRoomAllocation[] = [
+        'reg_no' => $grp[$dIndex]['reg_no'],
+        'room'   => $roomName,
+        'seat'   => 'A' . ($i + 1),
+        'edate'  => $edate,
+        'session' => $session,
+        'elective' => $grp[$dIndex]['COURSE'] ?? null
+      ];
+      $dIndex++;
+    }
+  }
+
+  $grp = array_slice($grp, $dIndex);
+  $x = count($grp);
   $z = abs($x - $y);
 
   if ($z % 2 == 0) {
@@ -651,44 +678,10 @@ function algoUniOne($conn, $shuffleOrder, $rooms, $edate, $session, $eid)
   $x = count($side_A);
   $y = count($side_B);
 
-  $drawingRoomData = [];
-
-  $g = getDrawingRoomData($conn, $rooms);
-  while ($row = $g->fetch_assoc()) {
-    $drawingRoomData[] = $row;
-  }
-
   $aIndex = 0;
   $bIndex = 0;
   $finalAllocation = [];
-  foreach ($drawingRoomData as $room) {
 
-    $roomName = $room['Room_no'];
-
-    for ($i = 0; $i < 30 && $aIndex < $x; $i++) {  //drawing rooms are capped at 60 capacity. 30 for Side A and 30 for B
-      $finalAllocation[] = [
-        'reg_no' => $side_A[$aIndex]['reg_no'],
-        'room'   => $roomName,
-        'seat'   => 'A' . ($i + 1),
-        'edate'  => $edate,
-        'session' => $session,
-        'elective' => $side_A[$aIndex]['COURSE'] ?? null
-      ];
-      $aIndex++;
-    }
-
-    for ($i = 0; $i < 30 && $bIndex < $y; $i++) {  //drawing rooms are capped at 60 capacity. 30 for Side A and 30 for B
-      $finalAllocation[] = [
-        'reg_no' => $side_B[$bIndex]['reg_no'],
-        'room'   => $roomName,
-        'seat'   => 'B' . ($i + 1),
-        'edate'  => $edate,
-        'session' => $session,
-        'elective' => $side_B[$bIndex]['COURSE'] ?? null
-      ];
-      $bIndex++;
-    }
-  }
 
   $roomData = [];
   $normalRoomData = getNormalRoomData($conn, $rooms);
@@ -727,7 +720,7 @@ function algoUniOne($conn, $shuffleOrder, $rooms, $edate, $session, $eid)
     }
   }
 
-  $result = $finalAllocation;
+  $result = array_merge($drawingRoomAllocation, $finalAllocation);
   return $result;
 }
 

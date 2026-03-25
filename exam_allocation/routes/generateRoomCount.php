@@ -90,7 +90,7 @@ td{
 </html>
 ";
 
-$uploadDirectory = __DIR__ . "/../Reports/{$edate}_{$session}/";
+$uploadDirectory = __DIR__ . "/../Reports/{$edate}_{$session}_{$aid}/";
 
 if (!is_dir($uploadDirectory)) {
   mkdir($uploadDirectory, 0777, true);
@@ -98,8 +98,10 @@ if (!is_dir($uploadDirectory)) {
 
 $fileName = "course_count_{$edate}_{$session}.pdf";
 
-$tempHtmlPath = $uploadDirectory . "temp.html";
-$pdfPath      = $uploadDirectory . $fileName;
+$uid = uniqid();
+$tempHtmlPath = $uploadDirectory . "temp_$uid.html";
+$pdfPath = $uploadDirectory . $fileName;
+
 
 file_put_contents($tempHtmlPath, $tablehtml);
 

@@ -4,7 +4,12 @@ import {viewRooms}  from "./view_rooms.js"
 window.Alpine = Alpine
 Alpine.start()  
 
-
+const active = document.querySelector('.active');
+if(active){
+  active.scrollIntoView({
+    behavior:'smooth'
+  });
+}
 
 document.querySelectorAll(".js-room-div").forEach(div => (
   div.addEventListener('click',()=>{
@@ -926,7 +931,7 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
     localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:aSlot,bSlots:bSlot,etype:etype}))
       aSlot.forEach(student => {
         html += `<tr>
-            <td align="center"> ${etype == 1 ? `S${student.semester}` : ""}  ${student.branch}</td>
+            <td align="center"> ${etype == 1 ? `S${student.semester}` : ""}  ${student.branch ? student.branch : ""}</td>
             <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
             <td align="center">${student.seat}</td>
           </tr>`
@@ -940,7 +945,7 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
           </tr>`
       bSlot.forEach(student => {
       html += `<tr>
-            <td align="center">${etype == 1 ? `S${student.semester}` : ""}  ${student.branch}</td>
+            <td align="center">${etype == 1 ? `S${student.semester}` : ""}  ${student.branch ? student.branch : ""}</td>
             <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
             <td align="center">${student.seat}</td>
           </tr>`
@@ -982,22 +987,42 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
     let maxLen = Math.max(aSlot.length,bSlot.length)
     localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:aSlot,bSlots:bSlot,etype:etype}))
     for(let i=0;i<maxLen;i+=1){
-      let a = aSlot[i]
-      let b = bSlot[i]
-       html += `<tr>
-            <td align="center">${etype == 1 ? `S${a.semester}` : ""}  ${a.branch}</td>
-            <td align="center">${etype == 1  ? a.rollno : a.reg_no}</td>
-            <td align="center">${a.seat}</td>
+      let a = aSlot[i] ? aSlot[i] : null
+      let b = bSlot[i] ? bSlot[i] : null
+       html += `<tr>`
+      if(a){
+              html+=`<td align="center">${etype == 1 ? `S${a.semester}` : ""}  ${a.branch ? a.branch : ""}</td>
+              <td align="center">${etype == 1  ? a.rollno : a.reg_no}</td>
+              <td align="center">${a.seat ? a.seat : ""}</td>`
+      }
+      else{
+        html+=`
+        <td style="border:none;"></td>
+        <td style="border:none;"></td>
+        <td style="border:none;"></td>`
+      }
+      if(b){
+        html += `
             <td align="center">${etype == 1 ? `S${b.semester}` : ""}  ${b.branch ? b.branch : ""}</td>
             <td align="center">${etype == 1  ? (b.rollno ? b.rollno : "") : (b.reg_no ? b.reg_no : "")}</td>
-            <td align="center">${b.seat}</td>
-          </tr>`
+            <td align="center">${b.seat ? b.seat : ""}</td>`
+      }
+      else{
+        html+=`
+        <td style="border:none;"></td>
+        <td style="border:none;"></td>
+        <td style="border:none;"></td>`
+      }
+      html += `</tr>`
     }
     html += `</table></div></div>`
     document.querySelector('.js-seating-data-container').innerHTML = html; 
     }
   })
-    .catch(e => alert("Allocation send failed"));
+    .catch(e => {
+      console.log(e)
+      alert("Allocation send failed " + e)
+    });
   })
 })
 
@@ -1330,28 +1355,26 @@ document.querySelector('.js-download-room-xls-report').addEventListener('click',
   downloadXls("js-examhall-detailed-report")
 })
 
-function batchDownloadReport() {
-  document.querySelectorAll('.js-room-blocks').forEach(room => {
-    const edate   = room.dataset.edate;
-    const etype   = room.dataset.etype;
-    const aid     = room.dataset.aid;
-    const ename   = JSON.parse(localStorage.getItem('downloadReport')).ename;
-    const session = room.dataset.session;
-    const roomId  = room.dataset.roomId;
-    const roomType = room.dataset.roomType; 
-    fetch("./routes/getSeatedStudentData.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        edate,
-        session,
-        aid,
-        roomId,
-        etype
-      })
-    })
-    .then(r => r.json())
-    .then(d => {
+async function batchDownloadReport() {
+
+  const rooms = document.querySelectorAll('.js-room-blocks');
+  const { edate, aid, session, ename, etype } =
+    JSON.parse(localStorage.getItem('downloadReport'));
+
+  try {
+
+    for (const room of rooms) {
+
+      const roomId   = room.dataset.roomId;
+      const roomType = room.dataset.roomType;
+
+      const r = await fetch("./routes/getSeatedStudentData.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ edate, session, aid, roomId, etype })
+      });
+
+      const d = await r.json();
 
       let students = d.students;
       let md = Math.ceil(students.length / 2);
@@ -1364,52 +1387,40 @@ function batchDownloadReport() {
         ? students.filter(s => s['seat'][0] === 'B')
         : students.slice(md);
 
-      return fetch("./routes/generateStudPdfs.php", {
+      await fetch("./routes/generateStudPdfs.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          edate: edate,
-          session: session,
-          aid: aid,
-          ename: ename,
-          roomId: roomId,
-          roomType: roomType,
+          edate,
+          session,
+          aid,
+          ename,
+          roomId,
+          roomType,
           aSlots: aSlot,
           bSlots: bSlot,
-          etype: etype
+          etype
         })
       });
 
-    })
-    .catch(err => alert("PDF generation failed"));
+      await new Promise(r => setTimeout(r, 150));
+    }
 
-  });
-  
-  const {edate,aid,session,ename,etype} = JSON.parse(localStorage.getItem('downloadReport'))
-  fetch("./routes/generatePDFs.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      edate: edate,
-      session: session,
-      aid: aid,
-      ename:ename,
-      etype:etype
-    })
-  })
-  .catch(err => alert("PDF generation failed"));
-  fetch("./routes/generateRoomCount.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      edate: edate,
-      session: session,
-      aid: aid,
-      ename:ename
-    })
-  })
-  .catch(err => alert("PDF generation failed"));
-  showPopUp("Downloaded!",'.js-popup')
+    await fetch("./routes/generatePDFs.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ edate, session, aid, ename, etype })
+    });
+    await fetch("./routes/generateRoomCount.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ edate, session, aid, ename })
+    });
+    showPopUp("Downloaded!", '.js-popup');
+  } catch (err) {
+    console.error(err);
+    alert("PDF generation failed");
+  }
 }
 
 document.querySelector(".js-download-room-count-report").addEventListener('click', ()=>{

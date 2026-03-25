@@ -20,10 +20,17 @@ function getBlocks($conn)
 
 function deleteRoom($conn, $id)
 {
-    $stmt = $conn->prepare("DELETE FROM rooms WHERE Room_no = ?");
-    $stmt->bind_param("s", $id);
-    $stmt->execute();
-    $stmt->close();
+    if ($id == "All") {
+        $stmt = $conn->prepare("DELETE FROM rooms");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result;
+    } else {
+        $stmt = $conn->prepare("DELETE FROM rooms WHERE Room_no = ?");
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $stmt->close();
+    }
 }
 
 function importRoomsFromCSV($conn, $fileTmpName, $block)
@@ -376,4 +383,29 @@ function getUniversityExamInfo($conn, $eid)
     $stmt->execute();
     $result = $stmt->get_result();
     return $result;
+}
+
+function convertCsvExamTimeTable($filename)
+{
+    $python = "python";
+    $script = "./scripts/format_timetable.py";
+    $filePath = escapeshellarg($filename);
+    $command = "$python $script $filePath";
+    exec($command, $output, $return_var);
+    if ($return_var !== 0) {
+        die("Python Error:<br>" . implode("<br>", $output));
+    }
+
+    $outputFile =  trim(end($output));
+
+    if (!$outputFile || !file_exists($outputFile)) {
+        die("Output file not found");
+    }
+
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="' . basename($outputFile) . '"');
+    header('Content-Length: ' . filesize($outputFile));
+
+    readfile($outputFile);
+    exit;
 }

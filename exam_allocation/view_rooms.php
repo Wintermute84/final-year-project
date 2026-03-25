@@ -11,6 +11,8 @@ if (isset($_GET['delete_id'])) {
   exit;
 }
 $result = getRooms($conn, $block);
+$blockNames = getBlocks($conn);
+
 if (isset($_POST['upload'])) {
   $filename = $_FILES['file']['tmp_name'];
 
@@ -95,8 +97,11 @@ if (isset($_POST['upload'])) {
               x-transition:leave-end="opacity-0 scale-95"
               class="bg-[#373737] absolute top-full mt-2 z-40 -left-10 border w-[238px] h-fit flex flex-col items-start p-3 rounded-md gap-1">
               <p @click="window.location.href='view_rooms.php?block=All'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">All</p>
-              <p @click="window.location.href='view_rooms.php?block=M%20George%20Block'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">M George Block</p>
-              <p @click="window.location.href='view_rooms.php?block=Ramanujan%20Block'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md">Ramanujan Block</p>
+              <?php if ($blockNames->num_rows > 0): ?>
+                <?php while ($row = $blockNames->fetch_assoc()): ?>
+                  <p @click="window.location.href='view_rooms.php?block=<?= $row['Block'] ?>'" class="hover:bg-[#5C5555] w-full px-2 py-1 rounded-md"><?= $row['Block'] ?></p>
+                <?php endwhile; ?>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -144,7 +149,10 @@ if (isset($_POST['upload'])) {
       <?php endif; ?>
     </div>
   </div>
-  <button class="absolute bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center bottom-8 right-3 cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
+  <div class="absolute bottom-8 right-3 flex gap-2">
+    <button @click="on=true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center  cursor-pointer"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
+    <a href="view_rooms.php?delete_id=All" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer" onclick="return confirm('Delete entire room details?');"><img class="h-[25px]" src="assets/delete.png" alt="add icon"></a>
+  </div>
   <script type="module" src="./scripts/app.js"></script>
 </body>
 

@@ -6,6 +6,16 @@ if (!isset($_SESSION["uid"])) {
 }
 $etype = isset($_GET['etype']) ? $_GET['etype'] : 'All';
 $result = getExams($conn, $etype);
+
+if (isset($_POST['exam-csv-upload'])) {
+  if (!empty($_FILES['exam-tt-csv-file']['tmp_name'])) {
+    $filename = $_FILES['exam-tt-csv-file']['tmp_name'];
+    convertCsvExamTimeTable($filename);
+  } else {
+    die("No file uploaded");
+  }
+}
+
 if (isset($_POST['exam-upload'])) {
   if (!empty($_FILES['time-table-upload-file']['tmp_name'])) {
     $filename = $_FILES['time-table-upload-file']['tmp_name'];
@@ -38,7 +48,7 @@ if (isset($_GET['delete_id'])) {
   <link rel="stylesheet" href="./styles/output.css">
 </head>
 
-<body x-data="{on: false}" class="bg-black h-screen flex flex-col relative">
+<body x-data="{on: false, display: false}" class="bg-black h-screen flex flex-col relative">
 
   <header class="border-b-2 min-h-[100px] h-fit border-[#FFFFFF] flex relative">
     <div class="flex items-center justify-between w-full">
@@ -139,6 +149,7 @@ if (isset($_GET['delete_id'])) {
       <div class="w-[80%] h-[80%]">
         <div x-data="{ open: false }" class="flex items-center justify-between m-2 gap-3">
           <button @click="on = true" class="h-[50px] w-[200px] bg-[#E5E5E5] rounded-sm cursor-pointer">Upload CSV</button>
+          <button @click="display = true" class="h-[50px] w-[200px] bg-[#E5E5E5] rounded-sm cursor-pointer">Convert CSV</button>
           <div @click="open = !open"
             class="flex items-center justify-between relative border h-[35px] w-[200px] px-2 rounded-md bg-[#373737] cursor-pointer">
             <p><?= $etype ? $etype : "All" ?></p>
@@ -232,6 +243,24 @@ if (isset($_GET['delete_id'])) {
       </form>
     </div>
   </div>
+  <div class="absolute inset-0 flex items-center justify-center bg-black z-40 opacity-96"
+    x-show="display">
+    <div class="w-[500px] h-[250px] bg-black z-50 border-white border-2  rounded-[3px]">
+      <div class="relative flex w-full h-[50px] items-center justify-center select-none">
+        <p>Upload Timetable to be Converted(.csv)</p>
+        <img @click="display = false" src="./assets/close.png" alt="close icon" class="absolute right-0 mr-4 h-[20px] cursor-pointer">
+      </div>
+      <form method="post" enctype="multipart/form-data" class="flex justify-center gap-3 mt-16">
+        <label class="bg-white p-2 border rounded-[3px] w-[112px] h-fit cursor-pointer" id="file-label" for="file">Choose File</label>
+        <input type="file" id="file" name="exam-tt-csv-file" accept=".csv,.xlsx" required>
+        <button type="submit" name="exam-csv-upload" class="upload-button bg-white border rounded-[3px] w-[112px] h-[41px]">Upload</button>
+      </form>
+      <?php if (isset($_GET['import']) && $_GET['import'] === 'success'): ?>
+        <p class="secondary text-center mt-8">CSV data imported successfully!</p>
+      <?php endif; ?>
+    </div>
+  </div>
+
   <button @click="on=true" class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer absolute bottom-8 right-3"><img class="h-[25px]" src="assets/add.png" alt="add icon"></button>
   <script type="module" src="./scripts/app.js"></script>
 
