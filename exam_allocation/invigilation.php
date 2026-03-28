@@ -141,5 +141,4 @@ if ($exams_res) {
       class="h-[25px]" src="assets/add.png" alt="add icon"></button>
   <script type="module" src="./scripts/app.js"></script>
 </body>
-
 </html>
