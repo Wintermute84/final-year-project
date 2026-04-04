@@ -207,9 +207,10 @@ table {
 border:1px solid black;
 }
 
-th, td {
+th, td, tr {
   padding: 4px;
-}
+  font-weight: bold;
+  }
 </style>
 </head>
 

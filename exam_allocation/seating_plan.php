@@ -344,7 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
               <?php endif; ?>
             </div>
             <div class="absolute bottom-13 flex gap-6">
-              <a href="seating_plan.php?step=3" class="h-10 w-[100px] border-white bg-[#252323] button-secondary rounded-md flex items-center justify-center">Back</a>
+              <a href="seating_plan.php?step=2" class="h-10 w-[100px] border-white bg-[#252323] button-secondary rounded-md flex items-center justify-center">Back</a>
               <button id="uniProceedButton" class="h-10 w-[100px] border-white bg-white rounded-md" type="button">Proceed</button>
             </div>
             <div class="flex flex-1 mx-4 gap-2">
