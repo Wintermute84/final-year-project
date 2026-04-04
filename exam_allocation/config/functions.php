@@ -409,3 +409,604 @@ function convertCsvExamTimeTable($filename)
     readfile($outputFile);
     exit;
 }
+
+function importFacultyDataCSV($conn, $fileTmpName)
+{
+    if (file_exists($fileTmpName)) {
+        $file = fopen($fileTmpName, "r");
+
+        fgetcsv($file);
+
+        while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+            $faculty = trim($data[0] ?? '');
+            if (empty($faculty))
+                continue;
+
+            $designation = trim($data[1] ?? 'Assistant');
+
+            $total_duty = isset($data[2]) && $data[2] !== '' ? intval($data[2]) : 0;
+            $is_available = isset($data[3]) && trim($data[3]) === '0' ? 0 : 1;
+
+            $check = $conn->prepare("SELECT fid FROM faculty_data WHERE faculty = ?");
+            $check->bind_param("s", $faculty);
+            $check->execute();
+            $check_res = $check->get_result();
+            if ($check_res->num_rows > 0) {
+                $row = $check_res->fetch_assoc();
+                $fid = $row['fid'];
+                $update = $conn->prepare("UPDATE faculty_data SET designation = ?, total_duty = ?, is_available = ? WHERE fid = ?");
+                $update->bind_param("siii", $designation, $total_duty, $is_available, $fid);
+                $update->execute();
+            }
+            else {
+                $stmt = $conn->prepare(
+                    "INSERT INTO faculty_data (faculty, designation, total_duty, is_available) VALUES (?, ?, ?, ?)"
+                );
+                $stmt->bind_param("ssii", $faculty, $designation, $total_duty, $is_available);
+                $stmt->execute();
+            }
+        }
+        fclose($file);
+        return true;
+    }
+    return false;
+}
+
+function importFacultyTimeTableCSV($conn, $fileTmpName)
+{
+    if (file_exists($fileTmpName)) {
+        $file = fopen($fileTmpName, "r");
+
+        fgetcsv($file);
+
+        while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+            $faculty = $data[0] ?? '';
+            $day = $data[1] ?? '';
+            $start_time = $data[2] ?? '';
+            $end_time = $data[3] ?? '';
+            $branch = $data[4] ?? '';
+            $sem = $data[5] ?? '';
+
+            if (empty($faculty) || empty($day) || empty($start_time) || empty($end_time)) {
+                continue;
+            }
+
+            $stmt = $conn->prepare("SELECT fid FROM faculty_data WHERE faculty = ?");
+            $stmt->bind_param("s", $faculty);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $fid = $row['fid'];
+            }
+            else {
+                $designation = 'Assistant';
+                $insert_fid = $conn->prepare("INSERT INTO faculty_data (faculty, designation) VALUES (?, ?)");
+                $insert_fid->bind_param("ss", $faculty, $designation);
+                $insert_fid->execute();
+                $fid = $insert_fid->insert_id;
+            }
+
+            if (preg_match('/\d+/', $sem, $matches)) {
+                $sem_val = intval($matches[0]);
+            }
+            else {
+                $sem_val = 0;
+            }
+
+            $start_time = date("H:i:s", strtotime($start_time));
+            $end_time = date("H:i:s", strtotime($end_time));
+
+            $stmt = $conn->prepare(
+                "INSERT INTO faculty_time_table (fid, faculty, day, start_time, end_time, branch, sem) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->bind_param("isssssi", $fid, $faculty, $day, $start_time, $end_time, $branch, $sem_val);
+            $stmt->execute();
+        }
+
+        fclose($file);
+
+        return true;
+    }
+    return false;
+}
+
+function importFacultyTimeTablePDF($conn, $fileTmpName, $originalFileName)
+{
+    $uploadDir = __DIR__ . "/../uploads/";
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    $pdfPath = $uploadDir . time() . "_" . basename($originalFileName);
+    if (is_uploaded_file($fileTmpName)) {
+        move_uploaded_file($fileTmpName, $pdfPath);
+    }
+    else {
+        copy($fileTmpName, $pdfPath);
+    }
+
+    $csvPath = $pdfPath . ".csv";
+
+    $pythonScript = realpath(__DIR__ . "/../scripts/convert.py");
+
+    $command = escapeshellcmd("python \"$pythonScript\" \"$pdfPath\" \"$csvPath\"");
+    exec($command, $output, $return_var);
+
+    if ($return_var === 0 && file_exists($csvPath)) {
+        header('Content-Description: File Transfer');
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . basename($originalFileName, '.pdf') . '_converted.csv"');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($csvPath));
+        flush();
+        readfile($csvPath);
+
+        exit;
+    }
+    else {
+        error_log("PDF to CSV conversion failed: " . implode("\n", $output));
+
+        @unlink($pdfPath);
+        return false;
+    }
+}
+
+function getAvailableFacultyList($conn, $edate, $session, $max_associate_dutycap)
+{
+    $stmt = $conn->prepare("SELECT distinct branch, sem, time, day FROM exam_time_table WHERE edate = ?");
+    $stmt->bind_param("s", $edate);
+    $stmt->execute();
+    $res = $stmt->get_result();
+
+    $exam_sems_only = [];
+    $exam_time_str = null;
+    $exam_day = null;
+    while ($row = $res->fetch_assoc()) {
+        if (!in_array($row['sem'], $exam_sems_only)) {
+            $exam_sems_only[] = $row['sem'];
+        }
+    }
+
+    $stmt_time = $conn->prepare("SELECT time, day FROM exam_time_table WHERE edate = ? AND session = ? LIMIT 1");
+    $stmt_time->bind_param("ss", $edate, $session);
+    $stmt_time->execute();
+    $time_res = $stmt_time->get_result();
+    if ($t_row = $time_res->fetch_assoc()) {
+        $exam_time_str = $t_row['time'];
+        $exam_day = ucfirst(strtolower(substr($t_row['day'], 0, 3)));
+    }
+
+    if (!$exam_time_str)
+        return [];
+
+    $parts = explode('-', $exam_time_str);
+    if (count($parts) != 2)
+        return [];
+
+    $exam_start = trim($parts[0]);
+    $exam_end = trim($parts[1]);
+
+    $start_ts = strtotime("1970-01-01 $exam_start");
+    $end_ts = strtotime("1970-01-01 $exam_end");
+
+    $duty_start_ts = $start_ts - (30 * 60);
+    $duty_end_ts = $end_ts + (30 * 60);
+
+    $query = "SELECT * FROM faculty_data WHERE is_available IS NULL OR is_available != 0";
+    $res = $conn->query($query);
+    $faculty_pool = [];
+    while ($row = $res->fetch_assoc()) {
+        $faculty_pool[$row['fid']] = $row;
+    }
+
+    $fids = array_keys($faculty_pool);
+    foreach ($fids as $fid) {
+        $faculty_pool[$fid]['is_impacted'] = false;
+    }
+
+    $fids_str = implode(',', $fids);
+
+    $stmt = $conn->prepare("SELECT fid, start_time, end_time, branch, sem FROM faculty_time_table WHERE fid IN ($fids_str) AND day = ?");
+    $stmt->bind_param("s", $exam_day);
+    $stmt->execute();
+    $tt_res = $stmt->get_result();
+
+    $busy_fids = [];
+    while ($tt_row = $tt_res->fetch_assoc()) {
+        $fid = $tt_row['fid'];
+        if (in_array($fid, $busy_fids) || !isset($faculty_pool[$fid]))
+            continue;
+
+        $c_start_ts = strtotime("1970-01-01 " . $tt_row['start_time']);
+        $c_end_ts = strtotime("1970-01-01 " . $tt_row['end_time']);
+
+        if ($c_start_ts < $duty_end_ts && $c_end_ts > $duty_start_ts) {
+            if (trim($tt_row['branch']) === '')
+                continue;
+
+            $class_sem_only = $tt_row['sem'];
+            if (in_array($class_sem_only, $exam_sems_only)) {
+                $faculty_pool[$fid]['is_impacted'] = true;
+            }
+            else {
+                $busy_fids[] = $fid;
+            }
+        }
+    }
+
+    foreach ($busy_fids as $busy_fid) {
+        unset($faculty_pool[$busy_fid]);
+    }
+
+    if (empty($faculty_pool))
+        return [];
+
+    return array_values($faculty_pool);
+}
+
+function getGlobalFacultyMatrix($conn, $eid = null)
+{
+    $eid_clause = "";
+    if ($eid !== null) {
+        $eid_clause = " WHERE eid = " . intval($eid);
+    }
+
+    $all_slots_query = "SELECT edate, session, time, day, GROUP_CONCAT(CONCAT(branch,'_',sem)) as branch_sems, GROUP_CONCAT(sem) as sems 
+                        FROM exam_time_table 
+                        $eid_clause
+                        GROUP BY edate, session, time, day
+                        ORDER BY STR_TO_DATE(edate, '%d-%m-%Y') ASC, STR_TO_DATE(SUBSTRING_INDEX(time, '-', 1), '%H:%i') ASC";
+    $slots_res = $conn->query($all_slots_query);
+
+    $date_sems_query = "SELECT edate, GROUP_CONCAT(sem) as sems FROM exam_time_table $eid_clause GROUP BY edate";
+    $date_sems_res = $conn->query($date_sems_query);
+    $date_sems_map = [];
+    while ($row = $date_sems_res->fetch_assoc()) {
+        $date_sems_map[$row['edate']] = array_unique(explode(',', $row['sems']));
+    }
+
+    $all_slots = [];
+    while ($slot = $slots_res->fetch_assoc()) {
+        $all_slots[] = [
+            'edate' => $slot['edate'],
+            'session' => $slot['session'],
+            'time' => $slot['time'],
+            'day' => ucfirst(strtolower(substr($slot['day'], 0, 3))),
+            'sems_only' => $date_sems_map[$slot['edate']] ?? []
+        ];
+    }
+
+    if (empty($all_slots))
+        return [];
+
+    $query = "SELECT * FROM faculty_data WHERE is_available IS NULL OR is_available != 0";
+    $res = $conn->query($query);
+    $faculty_pool = [];
+    while ($row = $res->fetch_assoc()) {
+        $faculty_pool[$row['fid']] = $row;
+        $fids[] = $row['fid'];
+    }
+
+    if (empty($faculty_pool))
+        return [];
+    $fids_str = implode(',', $fids);
+
+    $stmt = $conn->query("SELECT fid, day, start_time, end_time, branch, sem FROM faculty_time_table WHERE fid IN ($fids_str)");
+    $timetable_map = [];
+    while ($t_row = $stmt->fetch_assoc()) {
+        $timetable_map[$t_row['fid']][$t_row['day']][] = $t_row;
+    }
+
+    foreach ($faculty_pool as $fid => &$fac) {
+        $total_free = 0;
+        $matrix = [];
+
+        foreach ($all_slots as $slot) {
+            $slot_key = $slot['edate'] . ' ' . $slot['session'];
+            $s_parts = explode('-', $slot['time']);
+
+            $s_start_ts = strtotime("1970-01-01 " . trim($s_parts[0]));
+            $s_end_ts = strtotime("1970-01-01 " . trim($s_parts[1]));
+
+            $s_d_start = $s_start_ts - (30 * 60);
+            $s_d_end = $s_end_ts + (30 * 60);
+
+            $is_busy = false;
+            if (isset($timetable_map[$fid][$slot['day']])) {
+                foreach ($timetable_map[$fid][$slot['day']] as $cls) {
+                    if (trim($cls['branch']) === '')
+                        continue;
+
+                    $c_start_ts = strtotime("1970-01-01 " . $cls['start_time']);
+                    $c_end_ts = strtotime("1970-01-01 " . $cls['end_time']);
+
+                    if ($c_start_ts < $s_d_end && $c_end_ts > $s_d_start) {
+                        $cls_sem = $cls['sem'];
+                        if (!in_array($cls_sem, $slot['sems_only'])) {
+                            $is_busy = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!$is_busy) {
+                $matrix[$slot_key] = '1';
+                $total_free++;
+            }
+            else {
+                $matrix[$slot_key] = '';
+            }
+        }
+
+        $fac['total_free_slots'] = $total_free;
+        $fac['matrix'] = $matrix;
+    }
+    unset($fac);
+    return $faculty_pool;
+}
+
+function allocateGlobalInvigilation($conn, $eid, $max_associate_dutycap)
+{
+    $conn->query("
+        UPDATE faculty_data fd
+        JOIN (
+            SELECT fdut.fid, COUNT(*) as c 
+            FROM faculty_duty fdut
+            JOIN seating_allocation_definition def ON fdut.aid = def.aid
+            WHERE def.eid = " . intval($eid) . "
+            GROUP BY fdut.fid
+        ) d ON fd.fid = d.fid
+        SET fd.total_duty = GREATEST(0, fd.total_duty - d.c)
+    ");
+
+    $conn->query("
+        DELETE fdut FROM faculty_duty fdut
+        JOIN seating_allocation_definition def ON fdut.aid = def.aid
+        WHERE def.eid = " . intval($eid) . "
+    ");
+
+    $faculty_pool = getGlobalFacultyMatrix($conn, $eid);
+    if (empty($faculty_pool))
+        return [];
+
+    $faculty_duty_during_this_exam = [];
+    foreach ($faculty_pool as $fid => $fac) {
+        $faculty_duty_during_this_exam[$fid] = 0;
+    }
+
+    $duty_matrix = [];
+    foreach ($faculty_pool as $fid => $fac) {
+        $duty_matrix[$fid] = [
+            'S.No' => 0,
+            'Faculty Name' => $fac['faculty'],
+            'Designation' => $fac['designation'],
+            'Total Lifetime Duty' => $fac['total_duty'],
+            'Total Free Slots' => $fac['total_free_slots'],
+        ];
+    }
+
+    $stmt = $conn->prepare("
+        SELECT sad.edate, sad.session, sad.room, MAX(sad.aid) as aid, COUNT(sad.reg_no) as N 
+        FROM seating_allocation_data sad
+        JOIN seating_allocation_definition def ON sad.aid = def.aid
+        WHERE def.eid = ?
+        GROUP BY sad.edate, sad.session, sad.room
+    ");
+    $stmt->bind_param("i", $eid);
+    $stmt->execute();
+    $res = $stmt->get_result();
+
+    $slot_requirements = [];
+    $room_requirements = [];
+    while ($row = $res->fetch_assoc()) {
+        $slot_key = trim($row['edate']) . ' ' . trim($row['session']);
+        $N = (int)$row['N'];
+        $req = ($N > 35) ? 2 : 1;
+
+        if (!isset($slot_requirements[$slot_key])) {
+            $slot_requirements[$slot_key] = 0;
+        }
+        $slot_requirements[$slot_key] += $req;
+
+        if (!isset($room_requirements[$slot_key])) {
+            $room_requirements[$slot_key] = [];
+        }
+        $room_requirements[$slot_key][] = ['room' => $row['room'], 'req' => $req, 'aid' => $row['aid']];
+    }
+
+    $all_slot_keys = array_keys($slot_requirements);
+    foreach ($faculty_pool as $fid => $fac) {
+        foreach ($all_slot_keys as $sk) {
+            $duty_matrix[$fid][$sk] = '';
+        }
+    }
+
+    $slot_availability = [];
+    foreach ($slot_requirements as $slot_key => $req) {
+        $avail_count = 0;
+        foreach ($faculty_pool as $fid => $fac) {
+            if (isset($fac['matrix'][$slot_key]) && $fac['matrix'][$slot_key] === '1') {
+                $avail_count++;
+            }
+        }
+        $slot_availability[$slot_key] = $avail_count;
+    }
+
+    $sorted_slots = array_keys($slot_requirements);
+    usort($sorted_slots, function ($a, $b) use ($slot_availability) {
+        return $slot_availability[$a] <=> $slot_availability[$b];
+    });
+
+    $allocations = [];
+    $assigned_for_slot = [];
+    $slot_assigned_count = [];
+
+    foreach ($sorted_slots as $slot_key) {
+        if ($slot_requirements[$slot_key] == 0)
+            continue;
+
+        $parts = explode(' ', $slot_key);
+        if (count($parts) < 2)
+            continue;
+        $s_edate = $parts[0];
+        $s_session = $parts[1];
+
+        $rooms_for_slot = isset($room_requirements[$slot_key]) ? $room_requirements[$slot_key] : [];
+        $assigned_for_slot[$slot_key] = [];
+
+        $candidates = [];
+        foreach ($faculty_pool as $fid => $fac) {
+            if (isset($fac['matrix'][$slot_key]) && $fac['matrix'][$slot_key] === '1') {
+                $has_worked_today = 0;
+                foreach ($allocations as $alloc) {
+                    if ($alloc['fid'] == $fid && trim($alloc['edate']) === $s_edate) {
+                        $has_worked_today = 1;
+                        break;
+                    }
+                }
+
+                $candidates[$fid] = [
+                    'fid' => $fid,
+                    'designation' => $fac['designation'],
+                    'total_free_slots' => $fac['total_free_slots'],
+                    'total_duty' => $fac['total_duty'],
+                    'duty_during_this_exam' => $faculty_duty_during_this_exam[$fid],
+                    'has_worked_today' => $has_worked_today
+                ];
+            }
+        }
+
+        $sortCandidates = function ($a, $b) {
+            if ($a['has_worked_today'] !== $b['has_worked_today']) {
+                return $a['has_worked_today'] <=> $b['has_worked_today'];
+            }
+            if ($a['total_duty'] !== $b['total_duty']) {
+                return $a['total_duty'] <=> $b['total_duty'];
+            }
+            if ($a['total_free_slots'] !== $b['total_free_slots']) {
+                return $a['total_free_slots'] <=> $b['total_free_slots'];
+            }
+
+            $a_is_asst = (stripos($a['designation'], 'Assistant') !== false) ? 1 : 0;
+            $b_is_asst = (stripos($b['designation'], 'Assistant') !== false) ? 1 : 0;
+            if ($a_is_asst !== $b_is_asst) {
+                return $b_is_asst <=> $a_is_asst;
+            }
+
+            return 0;
+        };
+
+        $valid_candidates = array_filter($candidates, function ($c) use ($max_associate_dutycap) {
+            $is_asst = stripos($c['designation'], 'Assistant') !== false;
+            return $is_asst || ($c['duty_during_this_exam'] < $max_associate_dutycap);
+        });
+
+        usort($valid_candidates, $sortCandidates);
+
+        if (!isset($slot_assigned_count[$slot_key])) {
+            $slot_assigned_count[$slot_key] = 0;
+        }
+
+        foreach ($rooms_for_slot as &$room_data) {
+            $room_req = $room_data['req'];
+            $req_aid = $room_data['aid'];
+
+            while ($room_req > 0 && !empty($valid_candidates)) {
+                $chosen = null;
+                $found_idx = -1;
+                foreach ($valid_candidates as $idx => $cand) {
+                    if (!isset($assigned_for_slot[$slot_key][$cand['fid']])) {
+                        $chosen = $cand;
+                        $found_idx = $idx;
+                        break;
+                    }
+                }
+
+                if ($chosen !== null) {
+                    unset($valid_candidates[$found_idx]);
+                }
+                else {
+                    break;
+                }
+
+                $fid = $chosen['fid'];
+                $assigned_for_slot[$slot_key][$fid] = true;
+
+                $allocations[] = [
+                    'edate' => $s_edate,
+                    'session' => $s_session,
+                    'aid' => $req_aid,
+                    'fid' => $fid
+                ];
+
+                $duty_matrix[$fid][$slot_key] = '1';
+                $slot_assigned_count[$slot_key]++;
+
+                $faculty_duty_during_this_exam[$fid] += 1;
+                $faculty_pool[$fid]['total_duty'] += 1;
+
+                $room_req--;
+            }
+        }
+    }
+
+    $shortfalls = [];
+    foreach ($slot_requirements as $slot_key => $required) {
+        $assigned = $slot_assigned_count[$slot_key] ?? 0;
+        if ($assigned < $required) {
+            $shortfalls[] = [
+                'slot'     => $slot_key,
+                'required' => $required,
+                'assigned' => $assigned,
+                'missing'  => $required - $assigned,
+            ];
+        }
+    }
+
+
+    $stmt = $conn->prepare("INSERT INTO faculty_duty (fid, aid, date, slot) VALUES (?, ?, ?, ?)");
+    foreach ($allocations as $alloc) {
+        $db_date = date('Y-m-d', strtotime($alloc['edate'])); // Convert exactly 
+        $stmt->bind_param("iiss", $alloc['fid'], $alloc['aid'], $db_date, $alloc['session']);
+        try {
+            $stmt->execute();
+            $update_td = $conn->prepare("UPDATE faculty_data SET total_duty = total_duty + 1 WHERE fid = ?");
+            $update_td->bind_param("i", $alloc['fid']);
+            $update_td->execute();
+        }
+        catch (Exception $e) {
+        }
+    }
+
+    $csv_data = [];
+    $sno = 1;
+    foreach ($duty_matrix as $fid => $dm) {
+        $dm['S.No'] = $sno++;
+        $csv_data[] = $dm;
+    }
+
+    return [
+        'allocations' => $allocations,
+        'csv_matrix'  => $csv_data,
+        'slot_keys'   => $all_slot_keys,
+        'shortfalls'  => $shortfalls,
+    ];
+}
+
+function resetAllFacultyDuty($conn)
+{
+    $conn->query("UPDATE faculty_data SET total_duty = 0");
+    $conn->query("TRUNCATE TABLE faculty_duty");
+}
+
+function getDistinctExamSlots($conn)
+{
+    $sql = "SELECT DISTINCT edate, session, time, day FROM exam_time_table ORDER BY STR_TO_DATE(edate, '%d-%m-%Y') ASC, session ASC";
+    return $conn->query($sql);
+}
+
