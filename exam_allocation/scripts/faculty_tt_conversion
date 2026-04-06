@@ -1,0 +1,234 @@
+import pdfplumber
+import pandas as pd
+import re
+
+def extract_timetable(pdf_path, csv_path="Final_Timetable_v23.csv"):
+    all_data = []
+
+    try:
+        pdf = pdfplumber.open(pdf_path)
+    except FileNotFoundError:
+        print(f"File not found: {pdf_path}")
+        return
+    except Exception as e:
+        print(f"Could not open PDF: {e}")
+        return
+
+    with pdf:
+        for page in pdf.pages:
+            
+            text = page.extract_text()
+            faculty_name = text.split('\n')[0].strip() if text else "Unknown"
+            tables = page.find_tables()
+            large_cells_bboxes = []
+            if tables:
+                for cell_bbox in tables[0].cells:
+                    if cell_bbox:
+                        cell_chars = page.within_bbox(cell_bbox).chars
+                        if any(c.get("size", 0) >= 10.0 for c in cell_chars):
+                            large_cells_bboxes.append(cell_bbox)
+
+            def size_filter(obj):
+                if obj.get("object_type") == "char":
+                    size = obj.get("size", 0)
+                    top = obj.get("top", 0)
+                    if top < 112:
+                        return True
+                    if size >= 10.0:
+                        return True
+                    in_large_cell = any(
+                        bbox[0]-2 <= obj["x0"] <= bbox[2]+2 and 
+                        bbox[1]-2 <= obj["top"] <= bbox[3]+2 
+                        for bbox in large_cells_bboxes
+                    )
+                    if in_large_cell:
+                        return False 
+                    return True 
+                return True 
+
+            filtered_page = page.filter(size_filter)
+            
+            table = filtered_page.extract_table()
+            if not table:
+                continue
+
+            df = pd.DataFrame(table)
+
+            new_cols = list(df.iloc[0])
+            new_cols[0] = 'Day'
+
+            seen = {}
+            unique_cols = []
+            for c in new_cols:
+                c_str = str(c) if c is not None else "Unknown"
+                if c_str in seen:
+                    seen[c_str] += 1
+                    unique_cols.append(f"{c_str}_{seen[c_str]}")
+                else:
+                    seen[c_str] = 0
+                    unique_cols.append(c_str)
+            
+            df.columns = unique_cols
+            df = df[1:]  
+
+            time_cols = [c for c in df.columns if c != 'Day']
+
+            day_series = df['Day'].copy()
+            split_row_mask = day_series.isna() | (day_series.astype(str).str.strip() == '')
+            
+            if split_row_mask.any():
+                df_filled = df[time_cols].ffill()
+                df.loc[split_row_mask, time_cols] = df_filled.loc[split_row_mask]
+
+            for idx in df.index:
+                for i in range(len(time_cols) - 1):
+                    col = time_cols[i]
+                    next_col = time_cols[i + 1]
+                    
+                    is_current_valid = (isinstance(df.loc[idx, col], str) and df.loc[idx, col].strip() != '')
+                    is_next_span = pd.isna(df.loc[idx, next_col]) # True for NaN/None, False for ""
+                    
+                    if is_current_valid and is_next_span:
+                        df.loc[idx, next_col] = df.loc[idx, col]
+            
+            df[time_cols] = df[time_cols].replace(r'^\s*$', pd.NA, regex=True)
+
+            df_melted = df.melt(id_vars=['Day'], var_name='Time_Slot', value_name='Branch')
+            df_melted['Faculty'] = faculty_name
+            df_melted['Day'] = df_melted['Day'].replace('', pd.NA).ffill()
+
+            df_melted['Branch_raw'] = df_melted['Branch'].fillna('').astype(str)
+
+            sep_pattern = re.compile(r'\n\s*[-–—─]{2,}\s*\n')
+
+            def split_entries(cell_text):
+                if not cell_text or not cell_text.strip(): return []
+                if sep_pattern.search(cell_text): parts = sep_pattern.split(cell_text)
+                else: parts = [cell_text]
+                return [p.replace('\n', ' ').strip() for p in parts if p.strip()]
+
+            df_melted['BranchList'] = df_melted['Branch_raw'].apply(split_entries)
+            df_expanded = df_melted.explode('BranchList').copy()
+            df_expanded['Branch'] = df_expanded['BranchList'].fillna('').astype(str)
+
+            def extract_semesters(x):
+                sems = re.findall(r'S\s*(\d)', str(x), re.IGNORECASE)
+                if not sems: return ''
+                return ', '.join(sorted(list(set(['s' + s for s in sems]))))
+
+            df_expanded['Semester'] = df_expanded['Branch'].apply(extract_semesters)
+
+            if df_expanded.empty:
+                continue
+
+            def split_time_slot(ts):
+                if not isinstance(ts, str): return "", ""
+                t_str = ts.split('\n')[1] if '\n' in ts else ts
+                if '-' in t_str:
+                    parts = t_str.split('-')
+                    return parts[0].strip(), parts[1].strip()
+                return t_str.strip(), ""
+
+            df_expanded[['start_time', 'end_time']] = df_expanded['Time_Slot'].apply(
+                lambda x: pd.Series(split_time_slot(x))
+            )
+
+            def join_nonempty(series):
+                branches = []
+                sem_pat = re.compile(r'S\s*\d+', re.IGNORECASE)
+                split_pat = re.compile(r'S\s*\d+|/', re.IGNORECASE)
+                
+                for s in series.astype(str):
+                    if not s or not str(s).strip(): continue
+                    
+                    first_sem = sem_pat.search(s)
+                    if not first_sem: continue
+                    
+                    s_trimmed = s[first_sem.end():]
+                    parts = split_pat.split(s_trimmed)
+                    for p in parts:
+                        clean_p = p.strip()
+                        if clean_p: branches.append(clean_p)
+
+                deduped = list(dict.fromkeys(branches))
+                return ', '.join(deduped)
+
+            grouped = df_expanded.groupby(['Faculty', 'Day', 'start_time', 'end_time']).agg({
+                'Time_Slot': 'first',
+                'Branch': join_nonempty,
+                'Semester': lambda x: ', '.join([s for s in pd.unique(x) if s])
+            }).reset_index()
+
+            final_df = grouped[['Faculty', 'Day', 'Time_Slot', 'start_time', 'end_time', 'Branch', 'Semester']]
+            all_data.append(final_df)
+
+    if not all_data:
+        print("No tables found in PDF; nothing to convert.")
+        return
+
+    full_timetable = pd.concat(all_data, ignore_index=True)
+    
+    days_order = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    full_timetable['Day'] = pd.Categorical(full_timetable['Day'], categories=days_order, ordered=True)
+    
+    def parse_time_start(start_str):
+        try:
+            if not isinstance(start_str, str) or not start_str: raise ValueError
+            return pd.to_datetime(start_str, format='%H:%M').time()
+        except:
+            return pd.Timestamp('23:59:59').time() 
+
+    full_timetable['Time_Sort'] = full_timetable['start_time'].apply(parse_time_start)
+    
+    full_timetable = full_timetable.sort_values(by=['Faculty', 'Day', 'Time_Sort'])
+    
+    full_timetable = full_timetable.drop(columns=['Time_Sort'])
+    
+    def normalize_str(s):
+        if not isinstance(s, str): return ""
+        return ''.join(s.split())
+
+    full_timetable['Prev_Branch'] = full_timetable.groupby(['Faculty', 'Day'])['Branch'].shift(1)
+    full_timetable['Prev_Branch_2'] = full_timetable.groupby(['Faculty', 'Day'])['Branch'].shift(2)
+    
+    def check_is_redundant(row):
+        curr = row['Branch']
+        prev = row['Prev_Branch']
+        prev2 = row['Prev_Branch_2']
+        
+        if not isinstance(curr, str): return False
+        
+        c_norm = normalize_str(curr)
+        if not c_norm: return False
+        
+        p1_norm = normalize_str(prev)
+        if p1_norm and len(c_norm) > 10 and c_norm in p1_norm and c_norm != p1_norm:
+            return True
+            
+        p2_norm = normalize_str(prev2)
+        if p2_norm and len(c_norm) > 10 and c_norm in p2_norm and c_norm != p2_norm:
+            return True
+            
+        return False
+
+    redundant_mask = full_timetable.apply(check_is_redundant, axis=1)
+    
+    if redundant_mask.any():
+        print(f"Cleaning occurred for {redundant_mask.sum()} rows found with redundant text artifacts.")
+        full_timetable.loc[redundant_mask, 'Branch'] = ''
+        
+    full_timetable = full_timetable.drop(columns=['Prev_Branch', 'Prev_Branch_2', 'Time_Slot'])
+    
+    if 'csv_path' not in locals():
+        csv_path = "Final_Timetable_v23.csv"
+    full_timetable.to_csv(csv_path, index=False)
+    print(f"Extraction and sorting complete! File saved as {csv_path}")
+    
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) == 3:
+        extract_timetable(sys.argv[1], sys.argv[2])
+    elif len(sys.argv) == 2:
+        extract_timetable(sys.argv[1])
+    else:
+        extract_timetable("Faculty TimeTable Dec 2024-Jun 2025 (1).pdf")
