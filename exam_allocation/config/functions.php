@@ -655,14 +655,43 @@ function getGlobalFacultyMatrix($conn, $eid = null)
         $eid_clause = " WHERE eid = " . intval($eid);
     }
 
-    $all_slots_query = "SELECT edate, session, time, day, GROUP_CONCAT(CONCAT(branch,'_',sem)) as branch_sems, GROUP_CONCAT(sem) as sems 
-                        FROM exam_time_table 
-                        $eid_clause
-                        GROUP BY edate, session, time, day
-                        ORDER BY STR_TO_DATE(edate, '%d-%m-%Y') ASC, STR_TO_DATE(SUBSTRING_INDEX(time, '-', 1), '%H:%i') ASC";
+    $etype = 1;
+    if ($eid !== null) {
+        $etype_res = $conn->query("SELECT etype FROM exam_definition WHERE eid = " . intval($eid));
+        if ($etype_res && $etype_row = $etype_res->fetch_assoc()) {
+            $etype = (int) $etype_row['etype'];
+        }
+    }
+
+    if ($etype === 2) {
+        $all_slots_query = "
+            SELECT 
+                edate, 
+                IF(CAST(SUBSTRING_INDEX(session, ':', 1) AS UNSIGNED) < 12, 'FN', 'AN') as session,
+                session as time,
+                UPPER(DAYNAME(STR_TO_DATE(edate, '%d-%m-%Y'))) as day,
+                GROUP_CONCAT(DISTINCT CONCAT(branch,'_',sem)) as branch_sems, 
+                GROUP_CONCAT(DISTINCT sem) as sems 
+            FROM appearing_list 
+            $eid_clause
+            GROUP BY edate, session
+            ORDER BY STR_TO_DATE(edate, '%d-%m-%Y') ASC, session ASC
+        ";
+
+        $date_sems_query = "SELECT edate, (SELECT GROUP_CONCAT(DISTINCT sem) FROM appearing_list) as sems FROM appearing_list GROUP BY edate";
+
+    } else {
+        $all_slots_query = "SELECT edate, session, time, day, GROUP_CONCAT(CONCAT(branch,'_',sem)) as branch_sems, GROUP_CONCAT(sem) as sems 
+                            FROM exam_time_table 
+                            $eid_clause
+                            GROUP BY edate, session, time, day
+                            ORDER BY STR_TO_DATE(edate, '%d-%m-%Y') ASC, STR_TO_DATE(SUBSTRING_INDEX(time, '-', 1), '%H:%i') ASC";
+
+        $date_sems_query = "SELECT edate, GROUP_CONCAT(sem) as sems FROM exam_time_table $eid_clause GROUP BY edate";
+    }
+
     $slots_res = $conn->query($all_slots_query);
 
-    $date_sems_query = "SELECT edate, GROUP_CONCAT(sem) as sems FROM exam_time_table $eid_clause GROUP BY edate";
     $date_sems_res = $conn->query($date_sems_query);
     $date_sems_map = [];
     while ($row = $date_sems_res->fetch_assoc()) {
@@ -701,6 +730,24 @@ function getGlobalFacultyMatrix($conn, $eid = null)
         $timetable_map[$t_row['fid']][$t_row['day']][] = $t_row;
     }
 
+    $existing_duties_query = "
+        SELECT fd.fid, DATE_FORMAT(fd.date, '%d-%m-%Y') as edate, fd.slot as session
+        FROM faculty_duty fd
+        JOIN seating_allocation_definition def ON fd.aid = def.aid
+    ";
+    if ($eid !== null) {
+        $existing_duties_query .= " WHERE def.eid != " . intval($eid);
+    }
+
+    $exist_res = $conn->query($existing_duties_query);
+    $busy_slots_map = [];
+    if ($exist_res) {
+        while ($row = $exist_res->fetch_assoc()) {
+            $slot_key = $row['edate'] . ' ' . $row['session'];
+            $busy_slots_map[$row['fid']][$slot_key] = true;
+        }
+    }
+
     foreach ($faculty_pool as $fid => &$fac) {
         $total_free = 0;
         $matrix = [];
@@ -714,6 +761,11 @@ function getGlobalFacultyMatrix($conn, $eid = null)
 
             $s_d_start = $s_start_ts - (30 * 60);
             $s_d_end = $s_end_ts + (30 * 60);
+
+            if (isset($busy_slots_map[$fid][$slot_key])) {
+                $matrix[$slot_key] = '';
+                continue;
+            }
 
             $is_busy = false;
             if (isset($timetable_map[$fid][$slot['day']])) {
@@ -737,8 +789,7 @@ function getGlobalFacultyMatrix($conn, $eid = null)
             if (!$is_busy) {
                 $matrix[$slot_key] = '1';
                 $total_free++;
-            }
-            else {
+            } else {
                 $matrix[$slot_key] = '';
             }
         }
@@ -790,12 +841,19 @@ function allocateGlobalInvigilation($conn, $eid, $max_associate_dutycap)
         ];
     }
 
+    $etype = 1;
+    $etype_res = $conn->query("SELECT etype FROM exam_definition WHERE eid = " . intval($eid));
+    if ($etype_res && $row = $etype_res->fetch_assoc()) {
+        $etype = (int) $row['etype'];
+    }
+
     $stmt = $conn->prepare("
-        SELECT sad.edate, sad.session, sad.room, MAX(sad.aid) as aid, COUNT(sad.reg_no) as N 
+        SELECT sad.edate, sad.session, sad.room, r.Type as room_type, MAX(sad.aid) as aid, COUNT(sad.reg_no) as N 
         FROM seating_allocation_data sad
         JOIN seating_allocation_definition def ON sad.aid = def.aid
+        LEFT JOIN rooms r ON sad.room = r.Room_no
         WHERE def.eid = ?
-        GROUP BY sad.edate, sad.session, sad.room
+        GROUP BY sad.edate, sad.session, sad.room, r.Type
     ");
     $stmt->bind_param("i", $eid);
     $stmt->execute();
@@ -805,8 +863,14 @@ function allocateGlobalInvigilation($conn, $eid, $max_associate_dutycap)
     $room_requirements = [];
     while ($row = $res->fetch_assoc()) {
         $slot_key = trim($row['edate']) . ' ' . trim($row['session']);
-        $N = (int)$row['N'];
-        $req = ($N > 35) ? 2 : 1;
+        $N = (int) $row['N'];
+        $rtype = isset($row['room_type']) ? $row['room_type'] : '';
+
+        if ($etype === 2) {
+            $req = (strcasecmp($rtype, 'Drawing') === 0) ? 2 : 1;
+        } else {
+            $req = ($N > 35) ? 2 : 1;
+        }
 
         if (!isset($slot_requirements[$slot_key])) {
             $slot_requirements[$slot_key] = 0;
@@ -929,8 +993,7 @@ function allocateGlobalInvigilation($conn, $eid, $max_associate_dutycap)
 
                 if ($chosen !== null) {
                     unset($valid_candidates[$found_idx]);
-                }
-                else {
+                } else {
                     break;
                 }
 
@@ -960,10 +1023,10 @@ function allocateGlobalInvigilation($conn, $eid, $max_associate_dutycap)
         $assigned = $slot_assigned_count[$slot_key] ?? 0;
         if ($assigned < $required) {
             $shortfalls[] = [
-                'slot'     => $slot_key,
+                'slot' => $slot_key,
                 'required' => $required,
                 'assigned' => $assigned,
-                'missing'  => $required - $assigned,
+                'missing' => $required - $assigned,
             ];
         }
     }
@@ -971,15 +1034,14 @@ function allocateGlobalInvigilation($conn, $eid, $max_associate_dutycap)
 
     $stmt = $conn->prepare("INSERT INTO faculty_duty (fid, aid, date, slot) VALUES (?, ?, ?, ?)");
     foreach ($allocations as $alloc) {
-        $db_date = date('Y-m-d', strtotime($alloc['edate'])); // Convert exactly 
+        $db_date = date('Y-m-d', strtotime($alloc['edate']));
         $stmt->bind_param("iiss", $alloc['fid'], $alloc['aid'], $db_date, $alloc['session']);
         try {
             $stmt->execute();
             $update_td = $conn->prepare("UPDATE faculty_data SET total_duty = total_duty + 1 WHERE fid = ?");
             $update_td->bind_param("i", $alloc['fid']);
             $update_td->execute();
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
         }
     }
 
@@ -992,9 +1054,9 @@ function allocateGlobalInvigilation($conn, $eid, $max_associate_dutycap)
 
     return [
         'allocations' => $allocations,
-        'csv_matrix'  => $csv_data,
-        'slot_keys'   => $all_slot_keys,
-        'shortfalls'  => $shortfalls,
+        'csv_matrix' => $csv_data,
+        'slot_keys' => $all_slot_keys,
+        'shortfalls' => $shortfalls,
     ];
 }
 
