@@ -41,15 +41,6 @@ if ($_SESSION['examType'] == 1) {
       echo json_encode(["error" => "Invalid input"]);
       exit;
     }
-
-    if ($students > $capacity) {
-      http_response_code(400);
-      echo json_encode([
-        "error" => "Room capacity will not fit all students. Please ensure sufficient rooms are selected.",
-        "discrepancy" => "$edate $session"
-      ]);
-      exit;
-    }
   }
 }
 echo json_encode(["success" => true]);

@@ -68,10 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
           x-transition:leave="transition ease-in duration-150"
           x-transition:leave-start="opacity-100 scale-100"
           x-transition:leave-end="opacity-0 scale-95"
-          class="absolute top-8 right-1 h-9 w-[120px] bg-[#373737] border p-3 flex items-center rounded-md shadow-lg">
+          class="absolute top-8 right-1 z-50 h-fit w-[120px] bg-[#373737] border p-3 flex flex-col gap-2 items-center rounded-md shadow-lg">
           <a href="logout.php" class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none">
             <img src="./assets/logout.png" alt="logout img">
             <p class="text-sm">Log out</p>
+          </a>
+          <a target="_blank" class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none" href="https://wintermute84.github.io/desks-directory/">
+            <img src="./assets/help.png" alt="faq img">
+            <p class="text-sm">Help</p>
           </a>
         </div>
       </div>
@@ -84,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
       <p class="secondary cursor-pointer" onclick="window.location.href='view_rooms.php'">Rooms</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='students.php'">Students</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='invigilation.php'">Invigilation</p>
-      <p class="secondary cursor-pointer" onclick="window.location.href='programmes.php'">Programmes</p>
+      <p class="secondary cursor-pointer" onclick="window.location.href='faculty.php'">Faculty</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
     </div>
   </header>
@@ -132,8 +136,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
     <?php if ($step === 2): ?>
       <form class="w-[95%] h-[90%] bg-[#0F0E0E]  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
         <div class="m-2 p-2">
-          <p class="text-2xl">Generate Seating Plan</p>
-          <p class="text-sm">Step 2 of 4</p>
+          <div class="w-full flex justify-between">
+            <div class="w-full">
+              <p class="text-2xl">Generate Seating Plan</p>
+              <p class="text-sm">Step 2 of 4</p>
+            </div>
+            <div class="w-15 h-10 bg-red-600 border-2 rounded-md p-2 flex items-center justify-center cursor-pointer relative js-room-count-dashboard">
+              <img class="w-8 h-8" src="./assets/error.png" alt="error-icon">
+              <div class="absolute w-[400px] h-[300px] bg-[#4e4949] right-0 top-11 py-1 rounded-sm border-2 js-studentcount-dashboard flex flex-col justify-start overflow-auto gap-2">
+              </div>
+            </div>
+          </div>
           <div class="flex gap-2 mt-2">
             <div class="w-[25px] h-[25px] bg-[#2C2F2C] rounded-full flex items-center justify-center text-sm">1</div>
             <div class="w-[25px] h-[25px] bg-[#55A648] rounded-full flex items-center justify-center text-sm">2</div>
@@ -147,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
                 <input type="checkbox" name="select-all-blocks" class="h-4 w-4 cursor-pointer" id="selectAllRooms">
                 Select All
               </label>
-
             </div>
             <div class="overflow-auto max-h-[300px] w-[100%] flex flex-wrap gap-2">
               <?php if ($rooms->num_rows > 0): ?>
@@ -232,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
     <?php endif; ?>
     <?php if ($step === 4 && $examType == 1): ?>
       <form class="w-[95%] h-fit bg-[#0F0E0E] relative  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
-        <a href="help.php" target="_blank" class="gap-1 h-10 w-20 bg-white absolute right-5 top-4 help-button flex items-center justify-center rounded-[8px] hover:opacity-80">
+        <a href="https://wintermute84.github.io/desks-directory/s" target="_blank" class="gap-1 h-10 w-20 bg-white absolute right-5 top-4 help-button flex items-center justify-center rounded-[8px] hover:opacity-80">
           <p class="secondary-font">Help</p>
           <img src="assets/help.png" class="h-4" alt="help-icon">
         </a>
@@ -311,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step != 2) {
     <?php endif; ?>
     <?php if ($step === 4 && $examType == 2): ?>
       <form class="w-[95%] h-fit bg-[#0F0E0E] relative  border-2 border-white rounded-xl" method="POST" enctype="multipart/form-data">
-        <a href="help.php" target="_blank" class="gap-1 h-10 w-20 bg-white absolute right-5 top-4 help-button flex items-center justify-center rounded-[8px] hover:opacity-80">
+        <a href="https://wintermute84.github.io/desks-directory/" target="_blank" class="gap-1 h-10 w-20 bg-white absolute right-5 top-4 help-button flex items-center justify-center rounded-[8px] hover:opacity-80">
           <p class="secondary-font">Help</p>
           <img src="assets/help.png" class="h-4" alt="help-icon">
         </a>

@@ -2,14 +2,18 @@
 include 'config/db_connect.php';
 include 'config/functions.php';
 
-$selected_eid = isset($_POST['eid']) && $_POST['eid'] !== '' ? intval($_POST['eid']) : (isset($_GET['eid']) && $_GET['eid'] !== '' ? intval($_GET['eid']) : null);
+if (!isset($_SESSION["uid"])) {
+  header("Location: index.php");
+}
+
+$selected_eid = isset($_GET['eid']) ? $_GET['eid'] : (isset($_POST['eid']) ? $_POST['eid'] : null);
 
 if (isset($_POST['download_csv'])) {
   $facs = getGlobalFacultyMatrix($conn, $selected_eid);
 
   header('Content-Type: text/csv');
   $filename = $selected_eid ? "faculty_matrix_eid_{$selected_eid}.csv" : "global_availability_matrix.csv";
-  header('Content-Disposition: attachment; filename="'.$filename.'"');
+  header('Content-Disposition: attachment; filename="' . $filename . '"');
 
   $output = fopen('php://output', 'w');
   if (!empty($facs)) {
@@ -35,13 +39,81 @@ if (isset($_POST['download_csv'])) {
   exit;
 }
 
+if (isset($_POST['generate_allocation']) && isset($selected_eid)) {
+  $eid = intval($selected_eid);
+  $max_associate_dutycap = intval($_POST['max_cap'] ?? 2);
+  try {
+    $result_data = allocateGlobalInvigilation($conn, $eid, $max_associate_dutycap);
+    $csv_matrix  = $result_data['csv_matrix'];
+    $matrix_slots = $result_data['slot_keys'];
+    $shortfalls  = $result_data['shortfalls'] ?? [];
+
+    $csv_content = buildCsvContent($csv_matrix, $matrix_slots, $eid);
+    $filename    = "final_assigned_duty_matrix_eid_{$eid}.csv";
+
+    if (empty($shortfalls)) {
+      header('Content-Type: text/csv');
+      header('Content-Disposition: attachment; filename="' . $filename . '"');
+      echo $csv_content;
+      exit;
+    }
+
+    $_SESSION['pending_csv'] = ['content' => $csv_content, 'filename' => $filename];
+    $_SESSION['pending_eid'] = $eid;
+  } catch (Exception $e) {
+    $error = $e->getMessage();
+  }
+}
+
+$ename = isset($_GET['ename']) ? $_GET['ename'] : null;
+$exam = getExams($conn, 'all');
+$eid = isset($_GET['eid']) ? $_GET['eid'] : null;
+$examType = isset($_GET['examtype']) ? $_GET['examtype'] : null;
+$examSlots = null;
+if (isset($examType) and isset($eid)) {
+  $examSlots = getExamSlots($conn, $eid, $examType);
+}
+if (isset($_POST['download_csv'])) {
+  $facs = getGlobalFacultyMatrix($conn, $selected_eid);
+
+  header('Content-Type: text/csv');
+  $filename = $selected_eid ? "faculty_matrix_eid_{$selected_eid}.csv" : "global_availability_matrix.csv";
+  header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+  $output = fopen('php://output', 'w');
+  if (!empty($facs)) {
+    $first = reset($facs);
+    $headers = ['S.No', 'Faculty Name', 'Designation', 'Total Free Slots'];
+    $matrix_slots = array_keys($first['matrix']);
+    foreach ($matrix_slots as $m)
+      $headers[] = $m;
+    fputcsv($output, $headers);
+
+    $sno = 1;
+    foreach ($facs as $f) {
+      $row = [$sno++, $f['faculty'], $f['designation'], $f['total_free_slots']];
+      foreach ($matrix_slots as $m) {
+        $row[] = $f['matrix'][$m];
+      }
+      fputcsv($output, $row);
+    }
+  } else {
+    fputcsv($output, ['No faculties available.']);
+  }
+  fclose($output);
+  exit;
+}
+
+
+
 $exams_res = getExams($conn, 'All');
 $all_exams = [];
 if ($exams_res) {
-    while($row = $exams_res->fetch_assoc()) {
-        $all_exams[] = $row;
-    }
+  while ($row = $exams_res->fetch_assoc()) {
+    $all_exams[] = $row;
+  }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -72,11 +144,14 @@ if ($exams_res) {
           x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
           x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100"
           x-transition:leave-end="opacity-0 scale-95"
-          class="absolute top-8 right-1 h-9 w-[120px] bg-[#373737] border p-3 flex items-center shadow-lg rounded-md z-50">
-          <a href="logout.php"
-            class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none">
+          class="absolute top-8 right-1 z-50 h-fit  w-[120px] bg-[#373737] border p-3 flex items-center shadow-lg rounded-md  flex-col gap-2">
+          <a href="logout.php" class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none">
             <img src="./assets/logout.png" alt="logout img">
             <p class="text-sm">Log out</p>
+          </a>
+          <a target="_blank" class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none" href="https://wintermute84.github.io/desks-directory/">
+            <img src="./assets/help.png" alt="faq img">
+            <p class="text-sm">Help</p>
           </a>
         </div>
       </div>
@@ -89,56 +164,62 @@ if ($exams_res) {
       <p class="secondary cursor-pointer" onclick="window.location.href='view_rooms.php'">Rooms</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='students.php'">Students</p>
       <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='invigilation.php'">Invigilation</p>
-      <p class="secondary cursor-pointer" onclick="window.location.href='programmes.php'">Programmes</p>
+      <p class="secondary cursor-pointer" onclick="window.location.href='faculty.php'">Faculty</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
     </div>
   </header>
   <main class="flex-1 flex overflow-hidden">
-    <section class="w-full h-full overflow-y-auto p-6 bg-black relative">
-      <div
-        style="display: flex; flex-direction: column; gap: 1rem; border-bottom: 1px solid #333; padding-bottom: 1rem; margin-bottom: 1.5rem;">
-        <div>
-          <h2 class="text-2xl font-bold mb-2 text-[#18C088]">Global Availability Matrix</h2>
-          <p class="text-gray-400">
-            <?= $selected_eid ? "Viewing availability for Exam ID: " . $selected_eid : "Viewing availability across all upcoming exam slots." ?>
-          </p>
+    <section class="relative flex-1 flex items-center justify-center">
+      <div class=" absolute bg-white w-[0.5px] h-[95%] right-0"></div>
+      <div class="w-[95%] h-[94%]">
+        <p class="text-md mt-1">Select Exam for Invigilation</p>
+        <p class="secondary">Invigilation can only be provided for exam whose seating plan has already been generated!</p>
+        <div class="w-[100%] h-[500px] bg-[#1c1919] rounded-xl border-2 mt-3 flex flex-col gap-2">
+          <div class="w-[95%] h-[100%] overflow-auto m-2">
+            <?php if ($exam->num_rows > 0): ?>
+              <?php while ($row = $exam->fetch_assoc()): ?>
+                <div class="<?= (isset($_GET['eid']) && ($_GET['eid'] == $row['eid'])) ? "active" : "bg-[#151515]" ?> py-4 px-2 w-[full] min-h-[110px] max-h-[120px] cursor-pointer  m-2 border rounded-sm flex items-center justify-between hover:opacity-80 transition-all ease-in-out">
+                  <a href="invigilation.php?eid=<?= $row['eid'] ?>&ename=<?= $row['ename'] ?>&examtype=<?= $row['etype'] ?>" class="w-[70%] flex flex-col ml-2">
+                    <p class="text-md truncate text-">Exam Name - <?= $row['ename'] ?></p>
+                    <p class="text-md">Exam Type - <?= $row['etype'] == "1" ? "Internal Exam" : "University Exam" ?></p>
+                    <p class="text-md">Start Date - <?= $row['sdate'] ?></p>
+                    <p class="text-md">End Date - <?= $row['edate'] ?></p>
+                  </a>
+                </div>
+              <?php endwhile; ?>
+            <?php else: ?>
+              <p>No Data found.</p>
+            <?php endif; ?>
+
+          </div>
         </div>
-        
-        <form method="GET" action="invigilation.php" id="examFilterForm" class="flex items-center gap-3 bg-[#222] p-3 rounded-lg border border-[#333]">
-          <label class="text-gray-300 font-medium">Filter by Exam:</label>
-          <select name="eid" onchange="document.getElementById('examFilterForm').submit()" class="bg-[#333] text-white p-2 rounded-md border border-[#444] outline-none focus:border-[#18C088]">
-            <option value="">-- All Exams --</option>
-            <?php foreach($all_exams as $ex): ?>
-              <option value="<?= $ex['eid'] ?>" <?= $selected_eid === intval($ex['eid']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($ex['ename']) ?> (EID: <?= $ex['eid'] ?>)
-              </option>
-            <?php endforeach; ?>
-          </select>
-        </form>
-
-        <form method="POST" action="invigilation.php" style="width: 100%;">
-          <?php if($selected_eid): ?>
-            <input type="hidden" name="eid" value="<?= htmlspecialchars($selected_eid) ?>">
-          <?php endif; ?>
-          <button type="submit" name="download_csv"
-            style="width: 100%; background-color: #18C088; color: black; padding: 16px 24px; border-radius: 8px; font-weight: bold; font-size: 18px; text-align: center; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0px 4px 15px rgba(24,192,136,0.4);"
-            onmouseover="this.style.backgroundColor='#10855E'" onmouseout="this.style.backgroundColor='#18C088'">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              style="width: 24px; height: 24px;">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-            </svg>
-            CLICK HERE TO DOWNLOAD CSV MATRIX
-          </button>
-        </form>
       </div>
-
-
     </section>
+    <section class="flex-1 flex items-start justify-center mt-5">
+      <div class="w-[100%] h-[100%] flex flex-col ">
+        <div class="w-[90%] h-[100px] mx-auto flex items-center justify-center gap-2">
+          <form class="flex w-[fit] h-[100%] justify-between items-center gap-2 border border-white p-2 rounded-md" method="POST" action="invigilation.php?eid=<?= isset($selected_eid) ? $selected_eid : null ?>">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+              <label style="color:#ccc; font-size:14px; white-space:nowrap;">Max Duties for Associates:</label>
+              <input type="number" name="max_cap" value="2" min="1"
+                style="background:#333; color:white; border:1px solid #444; border-radius:6px; padding:8px 10px; width:80px; outline:none;">
+            </div>
+            <button name="generate_allocation" type="submit" class="w-fit h-[fit] p-2 bg-[#1F1B1B] border border-white  button-secondary rounded-md js-allocate-faculty">Allocate Faculty</button>
+
+          </form>
+          <form method="POST" action="invigilation.php"
+            onsubmit="return confirm('Are you sure you want to completely RESET the global odometer? This physically drops all duties to 0.');">
+            <button class="bg-[#1F1B1B] border border-white w-fit h-[fit] p-2 button-secondary rounded-md" name="reset_duty">Reset Duties</button>
+          </form>
+          <form method="POST" action="invigilation.php?eid=<?= isset($selected_eid) ? $selected_eid : null ?>">
+            <button name="download_csv" class="w-fit h-[fit] p-2 bg-[#1F1B1B] border border-white button-secondary rounded-md">Download Allocation</button>
+          </form>
+
+        </div>
+    </section>
+
   </main>
-  <button
-    class="absolute bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center bottom-8 right-3 cursor-pointer"><img
-      class="h-[25px]" src="assets/add.png" alt="add icon"></button>
   <script type="module" src="./scripts/app.js"></script>
 </body>
+
 </html>

@@ -1,14 +1,176 @@
 import Alpine from "../node_modules/alpinejs/dist/module.esm.js"
 import {viewRooms}  from "./view_rooms.js"
+import * as Excel from '../node_modules/exceljs/dist/exceljs.js';
 
 window.Alpine = Alpine
 Alpine.start()  
+sessionStorage.clear()
 
 const active = document.querySelector('.active');
 if(active){
   active.scrollIntoView({
-    behavior:'smooth'
+    behavior:'smooth',
+    block: 'nearest', 
+    inline: 'start'
   });
+}
+
+let rooms = []
+
+const exams = document.querySelectorAll(".js-exam-div")
+const hiddenInput = document.getElementById('selectedExamId');
+const examTypeInput = document.getElementById('selectedExamType');
+const roomsDiv = document.querySelectorAll(".js-room-select-div");
+let roomCapacity = 0
+
+roomsDiv.forEach(room => {
+  room.addEventListener('click',()=>{
+    room.classList.toggle("dinkey")
+    if(rooms.includes(room.dataset.eid)){
+      rooms = rooms.filter(function(val) {
+        if(val === room.dataset.eid){
+          roomCapacity -= parseInt(room.dataset.capacity)
+        }
+        return val !== room.dataset.eid; 
+      })
+    }
+    else{
+      rooms.push(room.dataset.eid)
+      roomCapacity += parseInt(room.dataset.capacity)
+    }
+    checkStudentCount(roomCapacity)
+  })
+})
+
+exams.forEach(exam => {
+  exam.addEventListener('click',()=>{
+    exams.forEach(e => e.classList.remove('dinkey'));
+    exam.classList.toggle("dinkey")
+    hiddenInput.value = exam.dataset.eid;
+    examTypeInput.value = exam.dataset.etype;
+  })
+})
+
+document.getElementById("selectAllRooms")?.addEventListener("change", function () {
+   if(this.checked){
+    rooms = []
+    roomCapacity = 0
+    roomsDiv.forEach(room => {
+      room.classList.add("dinkey")
+      rooms.push(room.dataset.eid)
+      roomCapacity += parseInt(room.dataset.capacity)
+    })
+   }
+   else{
+    roomCapacity = 0
+    roomsDiv.forEach(room => {
+      room.classList.remove("dinkey")
+      rooms = [];
+    })
+   }
+});
+
+document.getElementById("proceedBtn")?.addEventListener("click", () => {
+
+  if (rooms.length === 0) {
+    alert("Select at least one room");
+    return;
+  }
+  if(confirm("Do you wish to proceed? Ensure if the capacity requirements for the needed exam slots are met.")){
+    fetch("./routes/setRooms.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        rooms: rooms,
+        roomCapacity: roomCapacity
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.error){
+        alert(data.error)
+      }
+      sessionStorage.clear()
+      window.location.href="seating_plan.php";
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to generate seating");
+    });
+}
+
+});
+
+
+document.querySelector(".js-room-count-dashboard")?.addEventListener('mouseenter', () => {
+  if(!sessionStorage.getItem("studentCapacity")){
+    fetch("./routes/getStudentCapacity.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.error){
+        alert(data.error + " Discrepancy on " + data.discrepancy)
+      }
+      sessionStorage.setItem("studentCapacity",JSON.stringify(data.count))
+      checkStudentCount(roomCapacity);
+
+    })
+    .catch(err => {
+      console.error(err);
+    });
+  }
+  else{
+      checkStudentCount(roomCapacity);
+  }
+})
+
+function checkStudentCount(capacity){
+  let studentCapacity = JSON.parse(sessionStorage.getItem("studentCapacity"));
+  let html = ``
+  Object.keys(studentCapacity).forEach(key => {
+    let slot = key.split("_")
+    let edate = slot[0]
+    let sess = slot[1]
+    let reqCapacity = studentCapacity[key]
+    html += getCheckHtml(edate,sess,capacity,reqCapacity)
+  })
+  document.querySelector('.js-studentcount-dashboard').innerHTML = html;
+}
+
+function getCheckHtml(edate,sess,capacity,reqCapacity){
+  let html = ``
+  if(capacity >= reqCapacity){
+    html = ` <div class="w-[95%] h-fit bg-[#171717] flex gap-6 items-center ml-2 p-2 border-2 rounded-sm">
+                  <div class="w-8 h-8 ml-2  border-2 rounded-full flex items-center justify-center bg-green-600">
+                    <img src="./assets/check.png" alt="not-filled-icon" class="w-6 h-6">
+                  </div>
+                  <div class="text-sm">
+                    <p>Exam Slot : ${edate} ${sess}</p>
+                    <p>Capacity Required : ${reqCapacity}</p>
+                    <p>Capacity Filled : ${capacity}</p>
+                  </div>
+                </div>
+    `
+  }
+  else{
+    html = `<div class="w-[95%] h-fit bg-[#171717] flex gap-6 items-center p-2 ml-2 border-2 rounded-sm">
+                  <div class="w-8 h-8 ml-2  border-2 rounded-full flex items-center justify-center bg-red-600">
+                    <img src="./assets/close.png" alt="not-filled-icon" class="w-6 h-6">
+                  </div>
+                  <div class="text-sm">
+                    <p>Exam Slot : ${edate} ${sess}</p>
+                    <p>Capacity Required : ${reqCapacity}</p>
+                    <p>Capacity Filled : ${capacity}</p>
+                  </div>
+                </div>`
+  }
+  return html;
 }
 
 document.querySelectorAll(".js-room-div").forEach(div => (
@@ -94,91 +256,6 @@ function higlightDiv(dataObj,jsClass){
 }
 
  
-let rooms = []
-
-const exams = document.querySelectorAll(".js-exam-div")
-const hiddenInput = document.getElementById('selectedExamId');
-const examTypeInput = document.getElementById('selectedExamType');
-const roomsDiv = document.querySelectorAll(".js-room-select-div");
-let roomCapacity = 0
-
-roomsDiv.forEach(room => {
-  room.addEventListener('click',()=>{
-    room.classList.toggle("dinkey")
-    if(rooms.includes(room.dataset.eid)){
-      rooms = rooms.filter(function(val) {
-        if(val === room.dataset.eid){
-          roomCapacity -= parseInt(room.dataset.capacity)
-        }
-        return val !== room.dataset.eid; 
-      })
-    }
-    else{
-      rooms.push(room.dataset.eid)
-      roomCapacity += parseInt(room.dataset.capacity)
-    }
-  })
-})
-
-exams.forEach(exam => {
-  exam.addEventListener('click',()=>{
-    exams.forEach(e => e.classList.remove('dinkey'));
-    exam.classList.toggle("dinkey")
-    hiddenInput.value = exam.dataset.eid;
-    examTypeInput.value = exam.dataset.etype;
-  })
-})
-
-document.getElementById("selectAllRooms")?.addEventListener("change", function () {
-   if(this.checked){
-    rooms = []
-    roomCapacity = 0
-    roomsDiv.forEach(room => {
-      room.classList.add("dinkey")
-      rooms.push(room.dataset.eid)
-      roomCapacity += parseInt(room.dataset.capacity)
-    })
-   }
-   else{
-    roomCapacity = 0
-    roomsDiv.forEach(room => {
-      room.classList.remove("dinkey")
-      rooms = [];
-    })
-   }
-});
-
-document.getElementById("proceedBtn")?.addEventListener("click", () => {
-
-  if (rooms.length === 0) {
-    alert("Select at least one room");
-    return;
-  }
-
-  fetch("./routes/setRooms.php", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      rooms: rooms,
-      roomCapacity: roomCapacity
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if(data.error){
-      alert(data.error + " Discrepancy on " + data.discrepancy)
-    }
-    sessionStorage.clear()
-    window.location.href="seating_plan.php";
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to generate seating");
-  });
-
-});
 
 
 document.querySelectorAll(".js-slot-div").forEach(div => {
@@ -402,7 +479,7 @@ document.querySelectorAll('.js-uni-shuffle-div').forEach(div => {
     oddBranch = null;
     const { eid, edate: date, session: session } = div.dataset;
     highlightSelectedDiv(date,session,".js-uni-shuffle-div");
-    slotkey = `S${eid}_${date}_${session}`
+    slotkey = CSS.escape(`S${eid}_${date}_${session}`)
     fetch("./routes/get_branches.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -531,7 +608,8 @@ document.getElementById("uniProceedButton")?.addEventListener("click", () => {
     allSlots.forEach(d => {
       const { eid, edate: date, session } = d.dataset;
       const key = `S${eid}_${date}_${session}`;
-      const saved = sessionStorage.getItem(key);
+      const escapedKey = CSS.escape(key)
+      const saved = sessionStorage.getItem(escapedKey);
       if (saved) payload[key] = JSON.parse(saved);
     });
     
@@ -567,7 +645,7 @@ document.querySelectorAll(".js-shuffle-div").forEach(div => {
     const { eid, edate: date, session: session } = div.dataset;
     highlightSelectedDiv(date,session,".js-shuffle-div");
     const key = `semGroups_${eid}_${date}_${session}`;
-    slotkey = `S${eid}_${date}_${session}`
+    slotkey = CSS.escape(`S${eid}_${date}_${session}`)
     let sg = JSON.parse(localStorage.getItem('groupings'))
     let semGroups = sg[key]
     pairs = semGroups
@@ -882,6 +960,138 @@ document.getElementById("proceeddBtn")?.addEventListener("click", () => {
   };
 })
 
+function processSlots(slots) {
+  let counts = {};
+  let printed = {};
+
+  slots.forEach(s => {
+    const sem = s.semester || '';
+    const key = `${sem}|${s.branch}|${(s.course || '').trim()}`;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  slots.forEach(s => {
+    const sem = s.semester || '';
+    const key = `${sem}|${s.branch}|${(s.course || '').trim()}`;
+
+    s.rowspan = 0;
+    s.printGroup = false;
+
+    if (!printed[key]) {
+      s.rowspan = counts[key];
+      s.printGroup = true;
+      printed[key] = true;
+    }
+  });
+
+  return slots;
+}
+
+async function downloadSeatingExcel() {
+
+  const data = JSON.parse(localStorage.getItem('roomReport'));
+
+  let { edate, session, examName, roomId, aSlots, bSlots, etype } = data;
+
+  // Apply grouping
+  aSlots = processSlots(aSlots);
+  bSlots = processSlots(bSlots);
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Seating");
+
+  // ---------- HEADER ----------
+  ws.mergeCells('A1:F1');
+  ws.getCell('A1').value = 'Muthoot Institute of Technology and Science (Autonomous)';
+
+  ws.mergeCells('A2:F2');
+  ws.getCell('A2').value = examName;
+
+  ws.mergeCells('A3:F3');
+  ws.getCell('A3').value = `Date: ${edate}    Session: ${session}`;
+
+  ws.mergeCells('A4:F4');
+  ws.getCell('A4').value = 'Hall Seating Arrangement';
+
+  ws.mergeCells('A5:F5');
+  ws.getCell('A5').value = `Hall No: ${roomId}`;
+
+  ws.addRow([]);
+  ws.addRow(['Branch', 'Roll No', 'Seat', 'Branch', 'Roll No', 'Seat']);
+
+  let rowIndex = ws.lastRow.number + 1;
+  let maxLen = Math.max(aSlots.length, bSlots.length);
+
+  for (let i = 0; i < maxLen; i++) {
+
+    let a = aSlots[i];
+    let b = bSlots[i];
+
+    let row = ws.getRow(rowIndex);
+
+    // ---------- A SLOT ----------
+    if (a) {
+      let roll = etype == 1 ? a.rollno : a.reg_no;
+
+      row.getCell(1).value = `${a.semester ? `S${a.semester}` : ''} ${a.branch}\n(${a.course})`;
+      row.getCell(2).value = roll;
+      row.getCell(3).value = a.seat;
+
+      if (a.printGroup) {
+        ws.mergeCells(rowIndex, 1, rowIndex + a.rowspan - 1, 1);
+      }
+    }
+
+    // ---------- B SLOT ----------
+    if (b) {
+      let roll = etype == 1 ? b.rollno : b.reg_no;
+
+      row.getCell(4).value = `${b.semester ? `S${b.semester}` : ''} ${b.branch}\n(${b.course})`;
+      row.getCell(5).value = roll;
+      row.getCell(6).value = b.seat;
+
+      if (b.printGroup) {
+        ws.mergeCells(rowIndex, 4, rowIndex + b.rowspan - 1, 4);
+      }
+    }
+
+    row.commit();
+    rowIndex++;
+  }
+
+  // ---------- STYLE ----------
+  ws.columns = [
+    { width: 30 },
+    { width: 18 },
+    { width: 12 },
+    { width: 30 },
+    { width: 18 },
+    { width: 12 }
+  ];
+
+  ws.eachRow(row => {
+    row.eachCell(cell => {
+      cell.alignment = {
+        vertical: 'middle',
+        horizontal: 'center',
+        wrapText: true
+      };
+    });
+  });
+
+  // ---------- DOWNLOAD ----------
+  const buffer = await wb.xlsx.writeBuffer();
+
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  });
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Seating_${roomId}.xlsx`;
+  link.click();
+}
+
 const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-room-blocks').forEach(button => {
   button.addEventListener('click',()=>{
     const edate = button.dataset.edate;
@@ -899,7 +1109,6 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
     .then(r => r.json())
     .then(d => {
       let students = d.students;
-      if(roomType == 'Drawing'){
       let html = `<div class="w-[90%] flex flex-col border" id="js-examhall-detailed-report">
     <table class="font-['sans-serif']">
       <tr>
@@ -926,16 +1135,36 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
             <th>Seat</th>
           </tr>`
     let md = Math.ceil(students.length / 2);
-    let aSlot = etype == 2 ? students.filter(student => student['seat'][0] === 'A') : students.slice(0,md)
-    let bSlot = etype == 2 ? students.filter(student => student['seat'][0] === 'B') : students.slice(md)
+    let aSlot = roomType == "Normal" ? students.filter(student => student['seat'][0] === 'A') : students.slice(0,md)
+    let bSlot = roomType == "Normal" ? students.filter(student => student['seat'][0] === 'B') : students.slice(md)
     localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:aSlot,bSlots:bSlot,etype:etype}))
+    aSlot = processSlots(aSlot);
+    bSlot = processSlots(bSlot);
       aSlot.forEach(student => {
-        html += `<tr>
-            <td align="center"> ${etype == 1 ? `S${student.semester}` : ""}  ${student.branch ? student.branch : ""}</td>
-            <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
-            <td align="center">${student.seat}</td>
-          </tr>`
-      })
+      const semester = student.semester || "";
+      const branch = student.branch || "";
+      const rollno = etype == 1 ? student.rollno : student.reg_no;
+      const seat = student.seat;
+      const course = (student.course || "").trim();
+
+      html += `<tr>`;
+
+      if (student.printGroup) {
+        html += `
+          <td rowspan="${student.rowspan}" align="center" style="vertical-align:middle;">
+            <div>
+              <div>${semester ? `S${semester}` : ""} ${branch}</div>
+              <div style="font-size:14px;">(${course})</div>
+            </div>
+          </td>
+        `;
+      }
+
+      html += `
+        <td align="center">${rollno}</td>
+        <td align="center">${seat}</td>
+      </tr>`;
+          })
       html += ` </table>
     <table class="w-[50%] h-fit">
           <tr border="0">
@@ -944,83 +1173,34 @@ const reapplyEventListener = (ename,etype) => document.querySelectorAll('.js-roo
             <th>Seat</th>
           </tr>`
       bSlot.forEach(student => {
-      html += `<tr>
-            <td align="center">${etype == 1 ? `S${student.semester}` : ""}  ${student.branch ? student.branch : ""}</td>
-            <td align="center">${etype == 1  ? student.rollno : student.reg_no}</td>
-            <td align="center">${student.seat}</td>
-          </tr>`
+        const semester = student.semester || "";
+  const branch = student.branch || "";
+  const rollno = etype == 1 ? student.rollno : student.reg_no;
+  const seat = student.seat;
+  const course = (student.course || "").trim();
+
+  html += `<tr>`;
+
+  if (student.printGroup) {
+    html += `
+      <td rowspan="${student.rowspan}" align="center" style="vertical-align:middle;">
+        <div>
+          <div>${semester ? `S${semester}` : ""} ${branch}</div>
+          <div style="font-size:14px;">(${course})</div>
+        </div>
+      </td>
+    `;
+  }
+
+  html += `
+    <td align="center">${rollno}</td>
+    <td align="center">${seat}</td>
+  </tr>`;
     })
     html += `</table></div></div>`
       document.querySelector('.js-seating-data-container').innerHTML = html;
-    }
-    else{
-      let html = `<div class="w-[90%] flex flex-col border" id="js-examhall-detailed-report">
-    <table class="font-['sans-serif']">
-      <tr>
-        <th  colspan='6'>Muthoot Institute of Technology and Science (Autonomous)</th>
-      </tr>
-      <tr>
-        <th  colspan='6'>${examName}</th>
-      </tr>
-      <tr>
-        <th colspan='6'>Date of Exam: ${edate} <span class="mx-8"></span>Session: ${session}</th>
-      </tr>
-      <tr>
-        <th colspan='6'>Hall Seating Arrangement</th>
-      </tr>
-      <tr>
-        <th colspan='6'>Hall No: ${roomId}</th>
-      </tr>
-    </table>
-    <div class="flex w-full justify-between gap-10">
-        <table class="w-[100%] h-fit">
-          <tr border="0">
-            <th>Branch</th>
-            <th>Roll No</th>
-            <th>Seat</th>
-            <th>Branch</th>
-            <th>Roll No</th>
-            <th>Seat</th>
-          </tr>`
-    let aSlot = students.filter(student => student['seat'][0] === 'A')
-    let bSlot = students.filter(student => student['seat'][0] === 'B')
-    let maxLen = Math.max(aSlot.length,bSlot.length)
-    localStorage.setItem('roomReport',JSON.stringify({edate:edate,session:session,aid:aid,roomId:roomId,examName:examName,roomType:roomType,aSlots:aSlot,bSlots:bSlot,etype:etype}))
-    for(let i=0;i<maxLen;i+=1){
-      let a = aSlot[i] ? aSlot[i] : null
-      let b = bSlot[i] ? bSlot[i] : null
-       html += `<tr>`
-      if(a){
-              html+=`<td align="center">${etype == 1 ? `S${a.semester}` : ""}  ${a.branch ? a.branch : ""}</td>
-              <td align="center">${etype == 1  ? a.rollno : a.reg_no}</td>
-              <td align="center">${a.seat ? a.seat : ""}</td>`
-      }
-      else{
-        html+=`
-        <td style="border:none;"></td>
-        <td style="border:none;"></td>
-        <td style="border:none;"></td>`
-      }
-      if(b){
-        html += `
-            <td align="center">${etype == 1 ? `S${b.semester}` : ""}  ${b.branch ? b.branch : ""}</td>
-            <td align="center">${etype == 1  ? (b.rollno ? b.rollno : "") : (b.reg_no ? b.reg_no : "")}</td>
-            <td align="center">${b.seat ? b.seat : ""}</td>`
-      }
-      else{
-        html+=`
-        <td style="border:none;"></td>
-        <td style="border:none;"></td>
-        <td style="border:none;"></td>`
-      }
-      html += `</tr>`
-    }
-    html += `</table></div></div>`
-    document.querySelector('.js-seating-data-container').innerHTML = html; 
-    }
   })
     .catch(e => {
-      console.log(e)
       alert("Allocation send failed " + e)
     });
   })
@@ -1269,6 +1449,191 @@ async function generateReports(edate,session,aid,ename,etype){
 
   }
 
+async function downloadHallAllocationExcel() {
+  const data = JSON.parse(localStorage.getItem('downloadReport'));
+  const { edate, session, aid, ename, etype } = data;
+
+  const res = await fetch("./routes/getReports.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ edate, session, aid, etype })
+  });
+
+  const d = await res.json();
+  const reportData = d.reportData;
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Hall Plan");
+if(etype == 2){
+  ws.mergeCells('A1:E1');
+  ws.getCell('A1').value = 'Muthoot Institute of Technology and Science (Autonomous)';
+
+  ws.mergeCells('A2:E2');
+  ws.getCell('A2').value = ename;
+
+  ws.mergeCells('A3:E3');
+  ws.getCell('A3').value = 'Hall Allotment Plan';
+
+  ws.mergeCells('A4:E4');
+  ws.getCell('A4').value = `Date: ${edate}    Session: ${session}`;
+
+  ws.addRow([]);
+  ws.addRow(['Branch', 'Hall', 'Course', 'Roll No', 'Total']);
+
+  let rowIndex = ws.lastRow.number + 1;
+
+  Object.entries(reportData).forEach(([branch, rinfo]) => {
+
+    let branchRowCount = Object.values(rinfo).reduce((sum, roomData) => {
+      console.log(roomData)
+      const courseCount = new Set(roomData.map(([_, course]) => course)).size;
+      return sum + courseCount;
+    }, 0);
+
+    let startRow = rowIndex;
+
+    Object.entries(rinfo).forEach(([room, roomData]) => {
+
+      const groupedByCourse = roomData.reduce((acc, [roll, course]) => {
+        if (!acc[course]) acc[course] = [];
+        acc[course].push(roll);
+        return acc;
+      }, {});
+
+      Object.entries(groupedByCourse).forEach(([course, rolls]) => {
+
+        let row = ws.getRow(rowIndex);
+
+        row.getCell(2).value = room;
+        row.getCell(3).value = course;
+
+        row.getCell(4).value =
+          etype == 1 ? formatRanges(rolls) : formatReg(rolls);
+
+        row.getCell(5).value = rolls.length;
+
+        row.commit();
+        rowIndex++;
+      });
+    });
+
+    ws.getCell(`A${startRow}`).value = branch;
+    ws.mergeCells(startRow, 1, startRow + branchRowCount - 1, 1);
+  });
+
+  // ---------- STYLE ----------
+  ws.columns = [
+    { width: 20 },
+    { width: 10 },
+    { width: 20 },
+    { width: 25 },
+    { width: 10 }
+  ];
+
+  ws.eachRow(row => {
+    row.eachCell(cell => {
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    });
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  });
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "Hall_Allotment.xlsx";
+  link.click();
+  }
+  else if(etype == 1){
+
+  for (const [sem, branchData] of Object.entries(reportData)) {
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(`Sem ${sem}`);
+
+    // ---------- HEADER ----------
+    ws.mergeCells('A1:E1');
+    ws.getCell('A1').value = 'Muthoot Institute of Technology and Science (Autonomous)';
+
+    ws.mergeCells('A2:E2');
+    ws.getCell('A2').value = ename;
+
+    ws.mergeCells('A3:E3');
+    ws.getCell('A3').value = `Hall Allotment Plan - Semester ${sem}`;
+
+    ws.mergeCells('A4:E4');
+    ws.getCell('A4').value = `Date: ${edate}    Session: ${session}`;
+
+    ws.addRow([]);
+    ws.addRow(['Branch', 'Hall', 'Course', 'Roll No', 'Total']);
+
+    let rowIndex = ws.lastRow.number + 1;
+
+    Object.entries(branchData).forEach(([branch, rinfo]) => {
+
+      let branchRowCount = Object.values(rinfo).reduce((sum, roomData) => {
+        const courseCount = new Set(roomData.map(([_, course]) => course)).size;
+        return sum + courseCount;
+      }, 0);
+
+      let startRow = rowIndex;
+
+      Object.entries(rinfo).forEach(([room, roomData]) => {
+
+        const groupedByCourse = roomData.reduce((acc, [roll, course]) => {
+          if (!acc[course]) acc[course] = [];
+          acc[course].push(roll);
+          return acc;
+        }, {});
+
+        Object.entries(groupedByCourse).forEach(([course, rolls]) => {
+
+          let row = ws.getRow(rowIndex);
+
+          row.getCell(1).value = branch;
+          row.getCell(2).value = room;
+          row.getCell(3).value = course;
+          row.getCell(4).value = formatRanges(rolls);
+          row.getCell(5).value = rolls.length;
+
+          row.commit();
+          rowIndex++;
+        });
+      });
+
+      ws.mergeCells(startRow, 1, startRow + branchRowCount - 1, 1);
+    });
+
+    ws.columns = [
+      { width: 20 },
+      { width: 10 },
+      { width: 20 },
+      { width: 25 },
+      { width: 10 }
+    ];
+
+    ws.eachRow(row => {
+      row.eachCell(cell => {
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      });
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `Hall_Allotment_Sem_${sem}.xlsx`;
+    link.click();
+  }}
+}
+
 
 
 document.getElementById('download-hall-reports').addEventListener('click',()=>{
@@ -1276,7 +1641,7 @@ document.getElementById('download-hall-reports').addEventListener('click',()=>{
 })
 
 document.getElementById('download-hall-xls-reports').addEventListener('click',()=>{
-  downloadXls("js-report-table");
+  downloadHallAllocationExcel();
 })
 
 function downloadXls(tableID, filename = 'Seating_Arrangement.xls') {
@@ -1352,7 +1717,7 @@ function downloadPDF() {
 }
 
 document.querySelector('.js-download-room-xls-report').addEventListener('click', ()=>{
-  downloadXls("js-examhall-detailed-report")
+  downloadSeatingExcel();
 })
 
 async function batchDownloadReport() {
@@ -1379,11 +1744,11 @@ async function batchDownloadReport() {
       let students = d.students;
       let md = Math.ceil(students.length / 2);
 
-      let aSlot = etype == 2
+      let aSlot = roomType == "Normal"
         ? students.filter(s => s['seat'][0] === 'A')
         : students.slice(0, md);
 
-      let bSlot = etype == 2
+      let bSlot = roomType == "Normal"
         ? students.filter(s => s['seat'][0] === 'B')
         : students.slice(md);
 

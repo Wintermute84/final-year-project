@@ -53,10 +53,14 @@ if (isset($_POST['upload'])) {
           x-transition:leave="transition ease-in duration-150"
           x-transition:leave-start="opacity-100 scale-100"
           x-transition:leave-end="opacity-0 scale-95"
-          class="absolute top-8 right-1 h-9 w-[120px] bg-[#373737] border p-3 flex items-center rounded-md shadow-lg">
+          class="absolute top-8 right-1 z-50 h-fit  flex-col gap-2 w-[120px] bg-[#373737] border p-3 flex items-center rounded-md shadow-lg">
           <a href="logout.php" class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none">
             <img src="./assets/logout.png" alt="logout img">
             <p class="text-sm">Log out</p>
+          </a>
+          <a target="_blank" class="flex items-center justify-center w-full gap-2 hover:bg-[#5C5555] rounded-sm transition-colors duration-200 cursor-pointer select-none" href="https://wintermute84.github.io/desks-directory/">
+            <img src="./assets/help.png" alt="faq img">
+            <p class="text-sm">Help</p>
           </a>
         </div>
       </div>
@@ -69,7 +73,7 @@ if (isset($_POST['upload'])) {
       <p class="border-b-2 pb-1 cursor-pointer" onclick="window.location.href='view_rooms.php'">Rooms</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='students.php'">Students</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='invigilation.php'">Invigilation</p>
-      <p class="secondary cursor-pointer" onclick="window.location.href='programmes.php'">Programmes</p>
+      <p class="secondary cursor-pointer" onclick="window.location.href='faculty.php'">Faculty</p>
       <p class="secondary cursor-pointer" onclick="window.location.href='courses.php'">Courses</p>
     </div>
   </header>

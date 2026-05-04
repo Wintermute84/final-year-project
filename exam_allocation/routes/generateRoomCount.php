@@ -32,6 +32,15 @@ while ($row = $result->fetch_assoc()) {
   ];
 }
 
+$courseTotals = [];
+
+foreach ($courses as $course => $rooms) {
+  $total = 0;
+  foreach ($rooms as $r) {
+    $total += $r['count'];
+  }
+  $courseTotals[$course] = $total;
+}
 
 $html = "<div class='pdf-page'>
 <table border='1' style='width:100%;'>
@@ -58,6 +67,27 @@ foreach ($courses as $course => $rooms) {
 
 $html .= "</table></div>";
 
+$html .= "<div class='pdf-page'>";
+$html .= "<table border='1' style='width:50%; margin:auto;'>
+<tr>
+  <th colspan='2'>Course-wise Total Students</th>
+</tr>
+<tr>
+  <th>Course</th>
+  <th>Total Students</th>
+</tr>
+";
+
+foreach ($courseTotals as $course => $total) {
+  $html .= "
+    <tr>
+      <td align='center'>{$course}</td>
+      <td align='center'>{$total}</td>
+    </tr>
+  ";
+}
+
+$html .= "</table></div>";
 
 $tablehtml = "
 <html>

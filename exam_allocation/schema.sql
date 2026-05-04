@@ -28,10 +28,11 @@ CREATE TABLE IF NOT EXISTS `appearing_list` (
   `ccode` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `edate` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `session` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `sem` int NOT NULL,
   PRIMARY KEY (`alid`),
   KEY `FK_appearing_list_exam_definition` (`eid`),
   CONSTRAINT `FK_appearing_list_exam_definition` FOREIGN KEY (`eid`) REFERENCES `exam_definition` (`eid`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7599 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=45589 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
@@ -45,19 +46,19 @@ CREATE TABLE IF NOT EXISTS `courses` (
   `branch` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   UNIQUE KEY `ccode` (`ccode`,`branch`,`sem`)
-) ENGINE=InnoDB AUTO_INCREMENT=973 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1427 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
 -- Dumping structure for table exam.exam_definition
 CREATE TABLE IF NOT EXISTS `exam_definition` (
   `eid` int NOT NULL AUTO_INCREMENT,
-  `ename` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
+  `ename` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
   `sdate` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0000-00-00',
   `edate` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0000-00-00',
   `etype` int NOT NULL DEFAULT (0),
   PRIMARY KEY (`eid`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
@@ -70,8 +71,46 @@ CREATE TABLE IF NOT EXISTS `exam_time_table` (
   `ccode` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
   `branch` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
   `sem` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
+  `day` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `time` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`ttid`)
-) ENGINE=InnoDB AUTO_INCREMENT=7959 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9044 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table exam.faculty_data
+CREATE TABLE IF NOT EXISTS `faculty_data` (
+  `fid` int NOT NULL AUTO_INCREMENT,
+  `faculty` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `designation` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `total_duty` int NOT NULL DEFAULT '0',
+  `is_available` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`fid`)
+) ENGINE=InnoDB AUTO_INCREMENT=359 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table exam.faculty_duty
+CREATE TABLE IF NOT EXISTS `faculty_duty` (
+  `did` int NOT NULL,
+  `fid` int NOT NULL,
+  `aid` int NOT NULL,
+  `date` date NOT NULL,
+  `slot` enum('FN','AN') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table exam.faculty_time_table
+CREATE TABLE IF NOT EXISTS `faculty_time_table` (
+  `fid` int NOT NULL,
+  `faculty` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `day` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `start_time` varchar(20) NOT NULL,
+  `end_time` varchar(20) NOT NULL,
+  `branch` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `sem` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -84,7 +123,7 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   `Type` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
   PRIMARY KEY (`Rid`),
   UNIQUE KEY `Index 2` (`Room_no`)
-) ENGINE=InnoDB AUTO_INCREMENT=138 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=275 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
@@ -99,7 +138,7 @@ CREATE TABLE IF NOT EXISTS `seating_allocation_data` (
   `electiveCourseId` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
   `seat` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
   PRIMARY KEY (`seatingId`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=59987 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=182261 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
@@ -109,7 +148,7 @@ CREATE TABLE IF NOT EXISTS `seating_allocation_definition` (
   `eid` int NOT NULL DEFAULT '0',
   `created_at` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0',
   PRIMARY KEY (`aid`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
@@ -127,7 +166,7 @@ CREATE TABLE IF NOT EXISTS `students` (
   `minor` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`student_id`),
   UNIQUE KEY `Index 2` (`reg_no`)
-) ENGINE=InnoDB AUTO_INCREMENT=4803 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5028 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Data exporting was unselected.
 
@@ -139,6 +178,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`uid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Dumping data for table exam.users: ~0 rows (approximately)
+INSERT INTO `users` (`uid`, `username`, `password`) VALUES
+	(1, 'admin', 'admin@mits');
 -- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;

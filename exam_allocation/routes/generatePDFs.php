@@ -152,7 +152,8 @@ if ($etype == 1) {
 
     $tableHtml .= "
     <table border=1 style='width:90%; margin: 15px auto; border-collapse:collapse;' class='report pdf-page'>
-      <tr>
+    <thead>
+    <tr>
         <th colspan='5'>Muthoot Institute of Technology and Science (Autonomous)</th>
       </tr>
       <tr>
@@ -171,6 +172,9 @@ if ($etype == 1) {
         <th>Roll No.</th>
         <th>Total no of students</th>
       </tr>
+    </thead>
+    <tbody>
+      
     ";
 
     foreach ($roomInfo as $branch => $rinfo) {
@@ -318,7 +322,7 @@ if ($etype == 1) {
     }
   }
 
-  $tableHtml .= "</table>";
+  $tableHtml .= "</tbody></table>";
 }
 
 $html = "
@@ -366,6 +370,15 @@ td {
   display: block !important;
   position: static !important;
   overflow: visible !important;
+}
+
+@media print
+{
+  table { page-break-after:auto }
+  tr    { page-break-inside:avoid; page-break-after:auto }
+  td    { page-break-inside:avoid; page-break-after:auto }
+  thead { display:table-header-group }
+  tfoot { display:table-footer-group }
 }
 
 
