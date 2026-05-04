@@ -213,11 +213,11 @@ function downloadMockData(type){
     mockCsvDownload(headers,'CourseDetails')
   }
   else if(type == 4){
-    const headers = ["Exam_Date (eg. 13-07-2026)","Session (FN/AN)","Course_Code","Semester (eg. 7)", "Department (eg. CSE A)"]; 
+    const headers = ["Exam_Date (eg. 13-07-2026)", "Day (eg. Friday)", "Time (13:00-14:30)","Session (FN/AN)","Course_Code","Semester (eg. 7)", "Department (eg. CSE A)"]; 
     mockCsvDownload(headers,'ExamTimeTable')
   }
   else if(type == 5){
-    const headers = ["Register_No (eg. MUT22CS149)","Branch (eg. ECE)","Course_Code","Exam_Date", "Exam Session (FN/AN)"]; 
+    const headers = ["Register_No (eg. MUT22CS149)","Branch (eg. ECE)","Course_Code","Exam_Date", "Exam Session (FN/AN)", "Semester (eg. 7)"]; 
     mockCsvDownload(headers,'Appearing List')
   }
 }
@@ -1000,7 +1000,6 @@ async function downloadSeatingExcel() {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Seating");
 
-  // ---------- HEADER ----------
   ws.mergeCells('A1:F1');
   ws.getCell('A1').value = 'Muthoot Institute of Technology and Science (Autonomous)';
 
@@ -1554,7 +1553,6 @@ if(etype == 2){
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet(`Sem ${sem}`);
 
-    // ---------- HEADER ----------
     ws.mergeCells('A1:E1');
     ws.getCell('A1').value = 'Muthoot Institute of Technology and Science (Autonomous)';
 

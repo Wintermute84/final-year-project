@@ -29,7 +29,7 @@
         </div>
         <label class="ml-6 flex flex-col mb-5">
           Username
-          <input name="user-name" type="text" class="border-2 border-[#605F5F] px-3 rounded-[15px] h-[50px] w-[80%] bg-[#2E2E2E]" placeholder="john doe">
+          <input name="user-name" type="text" class="border-2 border-[#605F5F] px-3 rounded-[15px] h-[50px] w-[80%] bg-[#2E2E2E]" placeholder="Zacharia Joseph">
         </label>
         <label class="ml-6 flex flex-col mb-5">
           Password

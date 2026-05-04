@@ -191,7 +191,7 @@ function addExamDefinition($conn, $filename)
                 $ccode = $data[2];
                 $edate = $data[3];
                 $sess = $data[4];
-                $sem = $data[5];
+                $sem = isset($data[5]) && trim($data[5]) !== '' ? trim($data[5]) : 0;
 
                 $stmts = $conn->prepare(
                     "INSERT INTO appearing_list(eid,student,branch,ccode,edate,session,sem) 
